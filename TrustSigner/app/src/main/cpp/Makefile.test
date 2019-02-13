@@ -1,0 +1,132 @@
+# myseo
+
+PROJECT_NAME = trustsigner
+
+ED25519_SOURCE_FILE =  \
+	ed25519/add_scalar.c \
+	ed25519/ge.c \
+	ed25519/keypair.c \
+	ed25519/seed.c \
+	ed25519/sign.c \
+	ed25519/fe.c \
+	ed25519/key_exchange.c \
+	ed25519/sc.c \
+	ed25519/sha512.c \
+	ed25519/verify.c
+
+SECP256K1_SOURCE_FILE =  \
+	secp256k1/secp256k1.c
+
+BIP32_BIP39_SOURCE_FILE = \
+	coin.c \
+	bip32_bip39/bignum.c \
+	bip32_bip39/ecdsa.c \
+	bip32_bip39/curves.c \
+	bip32_bip39/secp256k1.c \
+	bip32_bip39/nist256p1.c \
+	bip32_bip39/rand.c \
+	bip32_bip39/hmac.c \
+	bip32_bip39/bip32.c \
+	bip32_bip39/bip39.c \
+	bip32_bip39/bip32_bip39.c \
+	bip32_bip39/pbkdf2.c \
+	bip32_bip39/base58.c \
+	bip32_bip39/base32.c \
+	bip32_bip39/address.c \
+	bip32_bip39/script.c \
+	bip32_bip39/ripemd160.c \
+	bip32_bip39/sha2.c \
+	bip32_bip39/sha3.c \
+	bip32_bip39/hasher.c \
+	bip32_bip39/aes/aescrypt.c \
+	bip32_bip39/aes/aeskey.c \
+	bip32_bip39/aes/aestab.c \
+	bip32_bip39/aes/aes_modes.c \
+	bip32_bip39/ed25519-donna/curve25519-donna-32bit.c \
+	bip32_bip39/ed25519-donna/curve25519-donna-helpers.c \
+	bip32_bip39/ed25519-donna/modm-donna-32bit.c \
+	bip32_bip39/ed25519-donna/ed25519-donna-impl-base.c \
+	bip32_bip39/ed25519-donna/ed25519-donna-basepoint-table.c \
+	bip32_bip39/ed25519-donna/ed25519-donna-32bit-tables.c \
+	bip32_bip39/ed25519-donna/curve25519-donna-scalarmult-base.c \
+	bip32_bip39/ed25519-donna/ed25519.c \
+	bip32_bip39/ed25519-donna/ed25519-sha3.c \
+	bip32_bip39/ed25519-donna/ed25519-keccak.c \
+	bip32_bip39/blake256.c \
+	bip32_bip39/blake2b.c \
+	bip32_bip39/blake2s.c \
+	bip32_bip39/groestl.c \
+	bip32_bip39/nem.c \
+	bip32_bip39/memzero.c
+
+WHITEBOX_SOURCE_FILE = \
+	whitebox.cpp \
+	whitebox/base.cpp \
+	whitebox/BGEAttack.cpp \
+	whitebox/GenericAES.cpp \
+	whitebox/LinearAffineEq.cpp \
+	whitebox/md5.cpp \
+	whitebox/MixingBijections.cpp \
+	whitebox/NTLUtils.cpp \
+	whitebox/WBAES.cpp \
+	whitebox/WBAESGenerator.cpp \
+	whitebox/RingBuffer.cpp \
+	whitebox/EncTools.cpp \
+	whitebox/InputObject.cpp \
+	whitebox/InputObjectBuffer.cpp \
+	whitebox/InputObjectIstream.cpp \
+	whitebox/InputObjectOstream.cpp \
+	whitebox/InputObjectIOstream.cpp
+
+TRUSTSIGNER_SOURCE_FILE = \
+	trustsigner.cpp \
+	base64.cpp
+
+STATIC_LIBRARY_FILE = libtrustsigner.a
+SHARED_LIBRARY_FILE = libtrustsigner.so
+
+ED25519_OBJECT_FILE  = $(ED25519_SOURCE_FILE:.c=.o)
+SECP256K1_OBJECT_FILE += $(SECP256K1_SOURCE_FILE:.c=.o)
+BIP32_BIP39_OBJECT_FILE += $(BIP32_BIP39_SOURCE_FILE:.c=.o)
+WHITEBOX_OBJECT_FILE += $(WHITEBOX_SOURCE_FILE:.cpp=.o)
+TRUSTSIGNER_OBJECT_FILE += $(TRUSTSIGNER_SOURCE_FILE:.cpp=.o)
+
+#LIBRARY_OBJECT_FILE  = $(ED25519_OBJECT_FILE)
+#LIBRARY_OBJECT_FILE += $(SECP256K1_OBJECT_FILE)
+LIBRARY_OBJECT_FILE += $(BIP32_BIP39_OBJECT_FILE)
+LIBRARY_OBJECT_FILE += $(WHITEBOX_OBJECT_FILE)
+LIBRARY_OBJECT_FILE += $(TRUSTSIGNER_OBJECT_FILE)
+
+CC = gcc
+CXX = c++
+AR = ar
+RANLIB = ranlib
+
+CXXFLAGS = -O3 -g -std=c++11 -fPIC -W -Wall -Wno-unused-parameter -frtti -fexceptions -D__LINUX__
+CFLAGS = -O3 -g -std=gnu99 -fPIC -W -Wall -Wno-unused-parameter -Wextra -Wimplicit-function-declaration -Wredundant-decls -Wstrict-prototypes -Wundef -Wshadow -Wpointer-arith -Wformat -Wreturn-type -Wsign-compare -Wmultichar -Wformat-nonliteral -Winit-self -Wuninitialized -Wformat-security -Werror -D__LINUX__
+
+LDFLAGS  = -lntl -lboost_program_options-mt -lboost_serialization-mt -lboost_iostreams-mt -lboost_random-mt -lboost_regex-mt -lboost_system-mt
+LDFLAGS += -L/usr/local/lib
+
+#INC_PATHS  = -I./ed25519 -I./secp256k1 -I./secp256k1/include
+INC_PATHS  = -I./include -I./whitebox -I./bip32_bip39 -I./bip32_bip39/aes
+INC_PATHS += -I/use/local/include
+
+all: clean lib test 
+
+%.o: %.c
+	$(CC) -c $(CFLAGS) $(INC_PATHS) -o $@ $<
+
+%.o: %.cpp
+	$(CXX) -c $(CXXFLAGS) $(INC_PATHS) -o $@ $<
+
+lib: $(LIBRARY_OBJECT_FILE)
+	#$(AR) cru $(STATIC_LIBRARY_FILE) $(LIBRARY_OBJECT_FILE)
+	#$(RANLIB) $(STATIC_LIBRARY_FILE)
+	$(CXX) -shared -o $(SHARED_LIBRARY_FILE) $(LIBRARY_OBJECT_FILE) $(LDFLAGS)
+
+test:
+	$(CC) $(CFLAGS) $(INC_PATHS) -L. -l$(PROJECT_NAME) test_main.c -o test
+
+clean:
+	@rm -rf $(LIBRARY_OBJECT_FILE) $(STATIC_LIBRARY_FILE) $(SHARED_LIBRARY_FILE) test *.dSYM
