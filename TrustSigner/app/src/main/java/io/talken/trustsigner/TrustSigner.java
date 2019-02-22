@@ -7,12 +7,8 @@ import android.content.pm.Signature;
 
 import android.content.Context;
 import android.text.TextUtils;
-//import android.content.SharedPreferences;
-//import android.preference.PreferenceManager;
-
-//import java.io.FileOutputStream;
-
-import io.talken.trustsigner.KeyChainEncryptedPreference;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
@@ -25,9 +21,6 @@ public class TrustSigner {
 
     public static final String version = "0.9.2";
     private static final String PREF_KEY_WB = "io.talken.trustsigner.wb";
-    private static final String PREF_NAME = "trustsigner.wb";
-    private KeyChainEncryptedPreference mPreference;
-//    private static final String FILENAME_WB = "trustsigner.wb";
 
     private Context mContext;
     private byte[] mAppID = null;
@@ -78,60 +71,30 @@ public class TrustSigner {
         return (context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
     }
 
-//    private void putStringSharedPreference (String key, String value) {
-//        SharedPreferences prefs =
-//                PreferenceManager.getDefaultSharedPreferences(mContext);
-//        SharedPreferences.Editor editor = prefs.edit();
-//        editor.putString(key, value);
-//        editor.commit();
-//    }
-//
-//    private String getStringSharedPreference (String key, String defValue) {
-//        SharedPreferences prefs =
-//                PreferenceManager.getDefaultSharedPreferences(mContext);
-//        return prefs.getString(key, defValue);
-//    }
+    private void putStringSharedPreference (String key, String value) {
+        SharedPreferences prefs =
+                PreferenceManager.getDefaultSharedPreferences(mContext);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString(key, value);
+        editor.commit();
+    }
 
-//    private String getStringSharedFile () {
-//        Byte[] data = null;
-//        try {
-//            FileOutputStream fis = openFileInput(FILENAME_WB, mContext.MODE_PRIVATE);
-//            fis.read(data);
-//            fis.close();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//        return data.toString();
-//    }
-//
-//    private void putStringSharedFile (String data) {
-//        try {
-//            FileOutputStream fos = openFileOutput(FILENAME_WB, mContext.MODE_PRIVATE);
-//            fos.write(data.getBytes());
-//            fos.close();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
+    private String getStringSharedPreference (String key, String defValue) {
+        SharedPreferences prefs =
+                PreferenceManager.getDefaultSharedPreferences(mContext);
+        return prefs.getString(key, defValue);
+    }
 
     public TrustSigner (Context context, String appID) {
-        if(checkEmulator()) {
-            System.out.println("[TrustSigner] : Emulator!");
-        }
-        if(checkDebuggable(context)) {
-            System.out.println("[TrustSigner] : Debuggable!");
-        }
         mContext = context;
         mAppID = appID.getBytes();
-//        System.out.println("### MYSEO : sign = " + getSignJava());
+        System.out.println("### MYSEO : sign = " + getSignJava(context));
     }
 
     public void initialize () {
         //저장된 WB데이터가 있는지 체크
         System.out.println("### MYSEO : TIME CHECK #1");
-        mPreference = new KeyChainEncryptedPreference(mContext, PREF_KEY_WB);
-        String strWbData = mPreference.read(PREF_NAME);
-//        String strWbData = getStringSharedPreference(PREF_KEY_WB, "");
+        String strWbData = getStringSharedPreference(PREF_KEY_WB, "");
 
         System.out.println("### MYSEO : TIME CHECK #2");
         if(TextUtils.isEmpty(strWbData)) {
@@ -139,8 +102,7 @@ public class TrustSigner {
             mWbData = getWBInitializeData(mAppID);
 
             System.out.println("### MYSEO : TIME CHECK #3");
-            mPreference.write(PREF_NAME, byteArrayToHexString(mWbData));
-//            putStringSharedPreference(PREF_KEY_WB, byteArrayToHexString(mWbData));
+            putStringSharedPreference(PREF_KEY_WB, byteArrayToHexString(mWbData));
 
             System.out.println("### MYSEO : TIME CHECK #4");
         }else {
@@ -253,7 +215,7 @@ public class TrustSigner {
             System.out.println("[TrustSigner] : Hash message is empty!");
             return null;
         }
-        byte[] signature = getWBSignatureData (mAppID, mWbData, coinSym.getBytes(), hdDepth, hdChange, hdIndex, hashMessage.getBytes());
+        byte[] signature = getWBSignatureData (mAppID, mWbData, coinSym.getBytes(), hdDepth, hdChange, hdIndex, hexStringToByteArray(hashMessage));
         return byteArrayToHexString(signature);
     }
 
@@ -298,6 +260,7 @@ public class TrustSigner {
             return false;
         }
         mWbData = setWBRecoveryData (mAppID, userKey.getBytes(), recoveryData.getBytes());
+        putStringSharedPreference(PREF_KEY_WB, byteArrayToHexString(mWbData));
         return true;
     }
 

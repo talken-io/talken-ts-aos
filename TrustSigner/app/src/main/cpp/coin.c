@@ -395,7 +395,7 @@ void stellar_message_sign(const HDNode *node, const uint8_t *message, const uint
 
 void stellar_hash_sign(const HDNode *node, const uint8_t *hash, uint8_t *signature)
 {
-	ed25519_sign(hash, SIGN_HASH_LENGTH, node->private_key, node->public_key+1, signature);
+	ed25519_sign(hash, SIGN_HASH_LENGTH, node->private_key, node->public_key + 1, signature);
 }
 
 #if 0  // MYSEO

@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
+#include <unistd.h>
+#include <dlfcn.h>
 
 #include "secp256k1.h"
 #include "base32.h"
@@ -116,6 +118,18 @@ static jbyteArray uchar2JbyteArry (JNIEnv *env, unsigned char *in, int len)
 	}
 
 	return array;
+}
+#endif
+
+#if 0
+#define WB_TABLE_FILENAME	"io.talken.trustsigner.wb"
+void test () {
+	if (access (WB_TABLE_FILENAME, F_OK) == -1) {
+#ifdef DEBUG_TRUST_SIGNER
+		LOGE("Error! File does not exist!\n");
+#endif
+		return -1;
+	}
 }
 #endif
 
@@ -264,6 +278,7 @@ unsigned char *TrustSigner_getWBInitializeData(char *app_id)
 
 	// SEED Create /////////////////////////////////////////////////////////////////////////////////
 	mnemonic = generateMnemonic (BIP39_KEY_STRENGTH);
+//    const char *mnemonic = "era spike flip first attitude avocado width volume combine wealth assist cactus coach maze scrub language audit educate achieve hub pigeon crucial banner secret";
 #ifdef DEBUG_TRUST_SIGNER
 	LOGD("----------------------------- MNEMONIC -------------------------------\n");
 	LOGD("%s\n", mnemonic);
@@ -1085,6 +1100,7 @@ static const char *SIGN = "308201dd30820146020101300d06092a864886f70d01010505003
 static int verifySign(JNIEnv *env);
 
 jint JNI_OnLoad(JavaVM *vm, void *reserved) {
+#if 0
 	JNIEnv *env = NULL;
 	if (vm->GetEnv((void **) &env, JNI_VERSION_1_4) != JNI_OK) {
 		return JNI_ERR;
@@ -1096,6 +1112,9 @@ jint JNI_OnLoad(JavaVM *vm, void *reserved) {
 	LOGE("Error! Unmatched signatures!");
 #endif
 	return JNI_ERR;
+#else
+    return JNI_VERSION_1_4;
+#endif
 }
 
 static jobject getApplication(JNIEnv *env) {

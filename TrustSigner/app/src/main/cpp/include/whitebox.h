@@ -24,9 +24,9 @@ extern "C" {
 #endif
 
 #if defined(__LINUX__)
-#define WB_TABLE_LENGTH			1107961 // magic number
+#define WB_TABLE_LENGTH			1275881 // magic number
 #elif defined(__aarch64__)
-#define WB_TABLE_LENGTH			1107961 // magic number // 1275881
+#define WB_TABLE_LENGTH			1275881 // magic number // 1275881 // 1107961
 #else
 #define WB_TABLE_LENGTH			1260549 // magic number
 #endif
