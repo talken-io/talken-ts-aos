@@ -8,7 +8,7 @@
 
 extern unsigned char *TrustSigner_getWBInitializeData(char *app_id);
 extern char *TrustSigner_getWBPublicKey(char *app_id, unsigned char *wb_data, int wb_table_len, char *coin_symbol, int hd_depth, int hd_change, int hd_index);
-extern char *TrustSigner_getWBSignatureData(char *app_id, unsigned char *wb_data, int wb_table_len, char *coin_symbol, int hd_depth, int hd_change, int hd_index, unsigned char *hash_message, int hash_len);
+extern unsigned char *TrustSigner_getWBSignatureData(char *app_id, unsigned char *wb_data, int wb_table_len, char *coin_symbol, int hd_depth, int hd_change, int hd_index, unsigned char *hash_message, int hash_len);
 extern char *TrustSigner_getWBRecoveryData(char *app_id, unsigned char *wb_data, int wb_table_len, char *user_key, int user_key_len, char *server_key, int server_key_len);
 extern unsigned char *TrustSigner_setWBRecoveryData(char *app_id, char *user_key, int user_key_len, char *recovery_data, int recovery_data_len);
 
@@ -20,7 +20,7 @@ int main (void) {
 	char *key = "1234567890123456789012345678901234567890123456789012345678901234";
 	unsigned char *wb_data = NULL;
 	char *public_key = NULL;
-	char *signature = NULL;
+	unsigned char *signature = NULL;
 	char *recovery_data = NULL;
 
 	wb_data = TrustSigner_getWBInitializeData (app_id);

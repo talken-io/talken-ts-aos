@@ -595,7 +595,7 @@ Java_io_talken_trustsigner_TrustSigner_getWBSignatureData(JNIEnv *env, jobject i
 		jbyteArray hashMessage_)
 #else
 extern "C"
-char *TrustSigner_getWBSignatureData(char *app_id, unsigned char *wb_data, int  wb_table_len, char *coin_symbol, int hd_depth, int hd_change, int hd_index, unsigned char *hash_message, int hash_len)
+unsigned char *TrustSigner_getWBSignatureData(char *app_id, unsigned char *wb_data, int  wb_table_len, char *coin_symbol, int hd_depth, int hd_change, int hd_index, unsigned char *hash_message, int hash_len)
 #endif
 {
 #ifdef __ANDROID__
@@ -612,7 +612,7 @@ char *TrustSigner_getWBSignatureData(char *app_id, unsigned char *wb_data, int  
 	const int  wb_table_len = env->GetArrayLength (wbData_);
 	const int  hash_len = env->GetArrayLength (hashMessage_);
 #else
-	char *signature = NULL;
+	unsigned char *signature = NULL;
 	int app_id_len = strlen (app_id);
 #endif
 
@@ -806,7 +806,7 @@ char *TrustSigner_getWBSignatureData(char *app_id, unsigned char *wb_data, int  
 #ifdef __ANDROID__
 	signature = uchar2JbyteArry (env, sign_message, sign_len);
 #else
-	signature = (char *) malloc (sign_len);
+	signature = (unsigned char *) malloc (sign_len);
 	memcpy (signature, sign_message, sign_len);
 #endif
 
