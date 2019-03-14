@@ -33,6 +33,8 @@ extern "C" {
 
 #define WB_ENCDATA_LENGTH		80 // magic number
 
+#define WB_LEN_BUF_LENGTH		8
+
 int trust_signer_create_table(char **table);
 int trust_signer_encrypt(char *table, int table_length, unsigned char *input, int in_length, unsigned char *output, bool encrypt);
 

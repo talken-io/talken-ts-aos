@@ -26,8 +26,8 @@ extern "C" {
 #endif
 
 #define BIP39_KEY_STRENGTH_64		64  // 6 keyword
-#define BIP39_KEY_STRENGTH_128		128 // 12 keyword // default
-#define BIP39_KEY_STRENGTH_256		256 // 24 keyword
+#define BIP39_KEY_STRENGTH_128		128 // 12 keyword
+#define BIP39_KEY_STRENGTH_256		256 // 24 keyword // default
 
 #define BIP39_KEY_STRENGTH			BIP39_KEY_STRENGTH_256
 #define BIP32_KEY_LENGTH			64
@@ -48,6 +48,7 @@ extern "C" {
 
 #define SIGN_HASH_LENGTH			32
 #define SIGN_SIGNATURE_LENGTH		64
+#define SIGN_SIGNATURE_MAX			5
 
 #define MNEMONIC_MAX_LENGTH			1024 // magic number calculated from wordlists
 
@@ -57,7 +58,6 @@ extern "C" {
 #define TEMP_BUFFER_LENGTH			512
 
 #define ETHEREUM_ADDRESS_LENGTH		20
-#define ETHEREUM_SIGNATURE_LENGTH	65
 
 #define STELLAR_ADDRESS_LENGTH		56
 #define STELLAR_ADDRESS_RAW_LENGTH	35

@@ -321,7 +321,11 @@ void sha3_Final(SHA3_CTX *ctx, unsigned char* result)
 	{
 		/* clear the rest of the data queue */
 		memset((char*)ctx->message + ctx->rest, 0, block_size - ctx->rest);
+#if USE_ETHEREUM // MYSEO : added
+		((char*)ctx->message)[ctx->rest] |= 0x01;
+#else
 		((char*)ctx->message)[ctx->rest] |= 0x06;
+#endif
 		((char*)ctx->message)[block_size - 1] |= 0x80;
 
 		/* process final block */

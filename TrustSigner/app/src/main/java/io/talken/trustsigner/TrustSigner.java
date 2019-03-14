@@ -19,7 +19,7 @@ public class TrustSigner {
         System.loadLibrary("trustsigner");
     }
 
-    public static final String version = "0.9.2";
+    public static final String version = "0.9.3";
     private static final String PREF_KEY_WB = "io.talken.trustsigner.wb";
 
     private Context mContext;
@@ -29,7 +29,7 @@ public class TrustSigner {
     private native byte[] getWBInitializeData (byte[] appID);
     private native byte[] getWBPublicKey      (byte[] appID, byte[] wbData, byte[] coinSymbol, int hdDepth, int hdChange, int hdIndex);
     private native byte[] getWBSignatureData  (byte[] appID, byte[] wbData, byte[] coinSymbol, int hdDepth, int hdChange, int hdIndex, byte[] hashMessage);
-    private native byte[] getWBRecoveryData   (byte[] appID, byte[] wbData, byte[] userKey, byte[] serverKey);
+//    private native byte[] getWBRecoveryData   (byte[] appID, byte[] wbData, byte[] userKey, byte[] serverKey);
     private native byte[] setWBRecoveryData   (byte[] appID, byte[] userKey, byte[] recoveryData);
 
     private native void test1 ();
@@ -219,33 +219,35 @@ public class TrustSigner {
         return byteArrayToHexString(signature);
     }
 
+    // 1번만 받을수 있을수 있는 체크 루틴 필요 (보안상) => getWBInitializeData()로 병합하여 wb_table_data와 1번만 가져오도록 변경
     public String getRecoveryData (String userKey, String serverKey) {
-        if (mAppID == null) {
-            System.out.println("[TrustSigner] : App ID is empty!");
-            return null;
-        }
-        if (mWbData == null) {
-            System.out.println("[TrustSigner] : WB data is empty!");
-            return null;
-        }
-        if (userKey == null) {
-            System.out.println("[TrustSigner] : User key is empty!");
-            return null;
-        }
-        if (serverKey == null) {
-            System.out.println("[TrustSigner] : Server key is empty!");
-            return null;
-        }
-        byte[] recovData = getWBRecoveryData (mAppID, mWbData, userKey.getBytes(), serverKey.getBytes());
+//        if (mAppID == null) {
+//            System.out.println("[TrustSigner] : App ID is empty!");
+//            return null;
+//        }
+//        if (mWbData == null) {
+//            System.out.println("[TrustSigner] : WB data is empty!");
+//            return null;
+//        }
+//        if (userKey == null) {
+//            System.out.println("[TrustSigner] : User key is empty!");
+//            return null;
+//        }
+//        if (serverKey == null) {
+//            System.out.println("[TrustSigner] : Server key is empty!");
+//            return null;
+//        }
+//        byte[] recovData = getWBRecoveryData (mAppID, mWbData, userKey.getBytes(), serverKey.getBytes());
         String recoveryData = null;
-        try {
-            recoveryData = new String(recovData, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            recoveryData = new String(recovData, "UTF-8");
+//        } catch (UnsupportedEncodingException e) {
+//            e.printStackTrace();
+//        }
         return recoveryData;
     }
 
+    // 이미 복구되어 있는지 체크 루틴 필요 (보안상)
     public boolean setRecoveryData (String userKey, String recoveryData) {
         if (mAppID == null) {
             System.out.println("[TrustSigner] : App ID is empty!");

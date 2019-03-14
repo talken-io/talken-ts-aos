@@ -41,12 +41,10 @@ add_library(
         src/main/cpp/bip32_bip39/ed25519-donna/curve25519-donna-scalarmult-base.c
         src/main/cpp/bip32_bip39/ed25519-donna/ed25519.c
         src/main/cpp/bip32_bip39/ed25519-donna/ed25519-sha3.c
-        src/main/cpp/bip32_bip39/ed25519-donna/ed25519-keccak.c
         src/main/cpp/bip32_bip39/blake256.c
         src/main/cpp/bip32_bip39/blake2b.c
         src/main/cpp/bip32_bip39/blake2s.c
         src/main/cpp/bip32_bip39/groestl.c
-        src/main/cpp/bip32_bip39/nem.c
         src/main/cpp/bip32_bip39/memzero.c
         src/main/cpp/whitebox/base.cpp
         src/main/cpp/whitebox/BGEAttack.cpp
@@ -68,6 +66,9 @@ add_library(
         src/main/cpp/whitebox.cpp
         src/main/cpp/base64.cpp
         src/main/cpp/trustsigner.cpp)
+
+#src/main/cpp/bip32_bip39/ed25519-donna/ed25519-keccak.c
+#src/main/cpp/bip32_bip39/nem.c
 
 add_library(ntl STATIC IMPORTED)
 set_target_properties(

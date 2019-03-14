@@ -40,7 +40,7 @@
 
 // use deterministic signatures
 #ifndef USE_RFC6979
-#define USE_RFC6979 1
+#define USE_RFC6979 0 // MYSEO : 1->0
 #endif
 
 // implement BIP32 caching
@@ -68,27 +68,27 @@
 
 // support Graphene operations (STEEM, BitShares)
 #ifndef USE_GRAPHENE
-#define USE_GRAPHENE 0
+#define USE_GRAPHENE 0 // MYSEO : 1->0
 #endif
 
 // support NEM operations
 #ifndef USE_NEM
-#define USE_NEM 0
+#define USE_NEM 0 // MYSEO : 1->0
 #endif
 
 // support MONERO operations
 #ifndef USE_MONERO
-#define USE_MONERO 0
+#define USE_MONERO 0 // MYSEO : 1->0
 #endif
 
 // support CARDANO operations
 #ifndef USE_CARDANO
-#define USE_CARDANO 0
+#define USE_CARDANO 0 // MYSEO : 1->0
 #endif
 
 // support Keccak hashing
 #ifndef USE_KECCAK
-#define USE_KECCAK 1
+#define USE_KECCAK 0 // MYSEO : 1->0
 #endif
 
 // add way how to mark confidential data

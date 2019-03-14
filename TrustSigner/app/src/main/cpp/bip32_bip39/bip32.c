@@ -578,6 +578,8 @@ void hdnode_fill_public_key(HDNode *node)
 }
 
 #if USE_ETHEREUM
+#include "bip32_bip39.h"
+char hexbuf[256];
 int hdnode_get_ethereum_pubkeyhash(const HDNode *node, uint8_t *pubkeyhash)
 {
 	uint8_t buf[65];
@@ -585,6 +587,9 @@ int hdnode_get_ethereum_pubkeyhash(const HDNode *node, uint8_t *pubkeyhash)
 
 	/* get uncompressed public key */
 	ecdsa_get_public_key65(node->curve->params, node->private_key, buf);
+
+    hex_print (hexbuf, buf, sizeof(buf));
+    printf("nodepubkey : %s\n", hexbuf);
 
 	/* compute sha3 of x and y coordinate without 04 prefix */
 	sha3_256_Init(&ctx);
@@ -595,6 +600,9 @@ int hdnode_get_ethereum_pubkeyhash(const HDNode *node, uint8_t *pubkeyhash)
 	sha3_Final(&ctx, buf);
 #endif
 
+
+    hex_print (hexbuf, buf + 12, 20);
+    printf("nodehashpubkey : %s\n", hexbuf);
 	/* result are the least significant 160 bits */
 	memcpy(pubkeyhash, buf + 12, 20);
 
@@ -847,9 +855,11 @@ const curve_info *get_curve_by_name(const char *curve_name) {
 	if (strcmp(curve_name, ED25519_NAME) == 0) {
 		return &ed25519_info;
 	}
+#if USE_CARDANO // MYSEO
 	if (strcmp(curve_name, ED25519_CARDANO_NAME) == 0) {
 		return &ed25519_cardano_info;
 	}
+#endif
 	if (strcmp(curve_name, ED25519_SHA3_NAME) == 0) {
 		return &ed25519_sha3_info;
 	}

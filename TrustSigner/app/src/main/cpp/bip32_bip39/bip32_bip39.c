@@ -32,7 +32,7 @@ const uint8_t *fromhex(const char *str)
 }
 
 #if 1 // MYSEO
-const unsigned char *str2hex(const char *string, const int length)
+unsigned char *str2hex(char *string, int length)
 {
 	static unsigned char buf[FROMHEX_MAXLEN];
 	size_t len = length / 2;

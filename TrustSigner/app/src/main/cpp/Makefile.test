@@ -51,13 +51,14 @@ BIP32_BIP39_SOURCE_FILE = \
 	bip32_bip39/ed25519-donna/curve25519-donna-scalarmult-base.c \
 	bip32_bip39/ed25519-donna/ed25519.c \
 	bip32_bip39/ed25519-donna/ed25519-sha3.c \
-	bip32_bip39/ed25519-donna/ed25519-keccak.c \
 	bip32_bip39/blake256.c \
 	bip32_bip39/blake2b.c \
 	bip32_bip39/blake2s.c \
 	bip32_bip39/groestl.c \
-	bip32_bip39/nem.c \
 	bip32_bip39/memzero.c
+
+#	bip32_bip39/nem.c \
+	bip32_bip39/ed25519-donna/ed25519-keccak.c \
 
 WHITEBOX_SOURCE_FILE = \
 	whitebox.cpp \
@@ -79,8 +80,8 @@ WHITEBOX_SOURCE_FILE = \
 	whitebox/InputObjectIOstream.cpp
 
 TRUSTSIGNER_SOURCE_FILE = \
-	trustsigner.cpp \
-	base64.cpp
+	base64.cpp \
+	trustsigner.cpp
 
 STATIC_LIBRARY_FILE = libtrustsigner.a
 SHARED_LIBRARY_FILE = libtrustsigner.so

@@ -42,6 +42,12 @@ int trust_signer_create_table(char **table)
 	generator.generateTables(keyFromString, KEY_SIZE_16, genAES, &coding, true);
 	generator.generateTables(keyFromString, KEY_SIZE_16, genAES, &coding, false);
 
+	for(int i=0; i<AES_BYTES; i++){
+		keyFromString[i] = (unsigned char) 0xFF;
+		keyFromString[i] = (unsigned char) 0x55;
+		keyFromString[i] = (unsigned char) 0x00;
+	}
+
 	//generator.save("/tmp/myseo_aes", genAES, &coding);
 	outTable = genAES->save();
 	//cout << "### MYSEO : Table Length = " << outTable.length() << endl;

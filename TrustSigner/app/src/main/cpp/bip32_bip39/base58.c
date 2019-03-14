@@ -211,6 +211,7 @@ int base58_encode_check(const uint8_t *data, int datalen, HasherType hasher_type
 	return success ? res : 0;
 }
 
+#include <stdio.h>
 int base58_decode_check(const char *str, HasherType hasher_type, uint8_t *data, int datalen)
 {
 	if (datalen > 128) {

@@ -42,6 +42,11 @@ const CoinInfo coins[COIN_INFOR_COUNT] = {
 	{"Bitcoin Gold", " BTG",      500000, "\x1d" "Bitcoin Gold Signed Message:\n", true, true, true,  true,  true,    38,   23, 0x0488b21e, 0x0488ade4, 79, "btg",  0x8000009c, SECP256K1_NAME, &secp256k1_info, },
 };
 
+#if 0
+#include "bip32_bip39.h"
+char hexbuf[256];
+#endif
+
 static uint32_t ser_length(uint32_t len, uint8_t *out)
 {
 	if (len < 253) {
@@ -79,7 +84,6 @@ static void bitcoin_message_hash(const uint8_t *message, size_t message_len, uin
 void bitcoin_message_sign(const HDNode *node, const uint8_t *message, const uint32_t message_len, uint8_t *signature)
 {
 	uint8_t v = 0;
-	uint8_t pby = 0;
 	uint8_t hash[HASHER_DIGEST_LENGTH] = {0};
 
 	bitcoin_message_hash(message, message_len, hash);
@@ -89,11 +93,11 @@ void bitcoin_message_sign(const HDNode *node, const uint8_t *message, const uint
 		return;
 	}
 	// segwit-in-p2sh
-	//signature[0] = 35 + pby;
+	//signature[0] = 35 + v;
 	// segwit
-	//signature[0] = 39 + pby;
+	//signature[0] = 39 + v;
 	// p2pkh
-	signature[0] = 31 + pby;
+	signature[0] = 31 + v;
 }
 
 int bitcoin_message_verify(const uint8_t *message, const uint32_t message_len, uint8_t *signature, uint8_t *address)
@@ -112,7 +116,11 @@ int bitcoin_message_verify(const uint8_t *message, const uint32_t message_len, u
 		return 1;
 	}
 
+#if 0 // MYSEO : hash message input
 	bitcoin_message_hash(message, message_len, hash);
+#else
+	memcpy(hash, message, message_len);
+#endif
 
 	recid = (signature[0] - 27) % 4;
 	compressed = signature[0] >= 31;
@@ -126,21 +134,23 @@ int bitcoin_message_verify(const uint8_t *message, const uint32_t message_len, u
 		pubkey[0] = 0x02 | (pubkey[64] & 1);
 	}
 
+#if 0 // MYSEO : debug
+    hex_print (hexbuf, pubkey, sizeof(pubkey));
+    printf("pubkey : %s\n", hexbuf);
+#endif
 	// p2pkh
 	if (signature[0] >= 27 && signature[0] <= 34) {
 		size_t len;
-#if 0 // MYSEO : not yet!!
-		if (coins[COIN_INFOR_BITCOIN].cashaddr_prefix) {
-			if (!cash_addr_decode(addr_raw, &len, coins[COIN_INFOR_BITCOIN].cashaddr_prefix, address)) {
-				return 2;
-			}
-		} else {
-			len = base58_decode_check(address, coins[COIN_INFOR_BITCOIN].curve->hasher_base58, addr_raw, MAX_ADDR_RAW_SIZE);
-		}
-#else
 		len = base58_decode_check((char *)address, coins[COIN_INFOR_BITCOIN].curve->hasher_base58, addr_raw, MAX_ADDR_RAW_SIZE);
+#if 0 // MYSEO : debug
+    	hex_print (hexbuf, addr_raw, MAX_ADDR_RAW_SIZE);
+    	printf("addr_raw      : %s\n", hexbuf);
 #endif
 		ecdsa_get_address_raw(pubkey, coins[COIN_INFOR_BITCOIN].address_type, coins[COIN_INFOR_BITCOIN].curve->hasher_pubkey, recovered_raw);
+#if 0 // MYSEO : debug
+    	hex_print (hexbuf, recovered_raw, MAX_ADDR_RAW_SIZE);
+    	printf("recovered_raw : %s\n", hexbuf);
+#endif
 		if (memcmp(recovered_raw, addr_raw, len) != 0
 				|| len != address_prefix_bytes_len(coins[COIN_INFOR_BITCOIN].address_type) + 20) {
 			return 2;
@@ -184,8 +194,8 @@ int bitcoin_message_verify(const uint8_t *message, const uint32_t message_len, u
 void bitcoin_hash_sign(const HDNode *node, const uint8_t *hash, uint8_t *signature)
 {
 	uint8_t v = 0;
-	ecdsa_sign_digest(&secp256k1, node->private_key, hash, signature, &v, NULL);
-	signature[0] = 31;
+	ecdsa_sign_digest(&secp256k1, node->private_key, hash, signature + 1, &v, NULL);
+	signature[0] = 31 + v;
 }
 
 
@@ -216,7 +226,7 @@ static void ethereum_message_hash(const uint8_t *message, size_t message_len, ui
 	c = '0' + message_len % 10;
 	sha3_Update(&ctx, &c, 1);
 	sha3_Update(&ctx, message, message_len);
-	keccak_Final(&ctx, hash);
+    sha3_Final(&ctx, hash);
 }
 
 void ethereum_message_sign(const HDNode *node, const uint8_t *message, const uint32_t message_len, uint8_t *signature, uint8_t *address)
@@ -240,7 +250,11 @@ int ethereum_message_verify(const uint8_t *message, const uint32_t message_len, 
 	uint8_t pubkey[65] = {0};
 	uint8_t hash[HASHER_DIGEST_LENGTH] = {0};
 
+#if 0 // MYSEO : hash message input
 	ethereum_message_hash(message, message_len, hash);
+#else
+	memcpy(hash, message, message_len);
+#endif
 
 	/* v should be 27, 28 but some implementations use 0,1.  We are
 	 * compatible with both.
@@ -253,10 +267,23 @@ int ethereum_message_verify(const uint8_t *message, const uint32_t message_len, 
 		return -1;
 	}
 
+#if 0 // MYSEO : debug
+    hex_print (hexbuf, pubkey, sizeof(pubkey));
+    printf("pubkey : %s\n", hexbuf);
+#endif
+
+	memset(hash, 0, sizeof(hash));
 	struct SHA3_CTX ctx;
 	sha3_256_Init(&ctx);
 	sha3_Update(&ctx, pubkey + 1, 64);
-	keccak_Final(&ctx, hash);
+    sha3_Final(&ctx, hash);
+
+#if 0 // MYSEO : debug
+    hex_print (hexbuf, address, 20);
+    printf("address    : %s\n", hexbuf);
+    hex_print (hexbuf, hash + 12, 20);
+    printf("hashpubkey : %s\n", hexbuf);
+#endif
 
 	/* result are the least significant 160 bits */
 	if (memcmp(address, hash + 12, 20) != 0) {
@@ -269,6 +296,10 @@ int ethereum_message_verify(const uint8_t *message, const uint32_t message_len, 
 void ethereum_hash_sign(const HDNode *node, const uint8_t *hash, uint8_t *signature)
 {
 	uint8_t v = 0;
+    uint8_t address[20] = {0};
+	if (!hdnode_get_ethereum_pubkeyhash(node, address)) {
+        return;
+    }
 	ecdsa_sign_digest(&secp256k1, node->private_key, hash, signature, &v, ethereum_is_canonic);
 	signature[64] = 27 + v;
 }
@@ -381,21 +412,12 @@ bool stellar_getAddressBytes(const char* str_address, uint8_t *out_bytes)
 
 void stellar_message_sign(const HDNode *node, const uint8_t *message, const uint32_t message_len, uint8_t *signature)
 {
-#if 0  // MYSEO
-	uint8_t to_sign[32];
-
-	SHA256_CTX sha256_ctx;
-	sha256_Init(&sha256_ctx);
-	sha256_Update(&sha256_ctx, data, len);
-	sha256_Final(&sha256_ctx, to_sign);
-#endif
-
 	ed25519_sign(message, message_len, node->private_key, node->public_key + 1, signature);
 }
 
 void stellar_hash_sign(const HDNode *node, const uint8_t *hash, uint8_t *signature)
 {
-	ed25519_sign(hash, SIGN_HASH_LENGTH, node->private_key, node->public_key + 1, signature);
+	ed25519_sign(hash, SIGN_HASH_LENGTH, node->private_key, node->public_key+1, signature);
 }
 
 #if 0  // MYSEO

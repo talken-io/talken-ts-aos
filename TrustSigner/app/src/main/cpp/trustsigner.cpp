@@ -248,7 +248,9 @@ unsigned char *TrustSigner_getWBInitializeData(char *app_id)
 #endif
 
 	unsigned char seed[BIP39_KEY_STRENGTH/4] = {0};
+#if 1 // MYSEO
 	const char *mnemonic = NULL;
+#endif
 
 	int table_length = 0;
 	char *table_buffer = NULL;
@@ -277,8 +279,11 @@ unsigned char *TrustSigner_getWBInitializeData(char *app_id)
 
 
 	// SEED Create /////////////////////////////////////////////////////////////////////////////////
+#if 1 // MYSEO
 	mnemonic = generateMnemonic (BIP39_KEY_STRENGTH);
-//    const char *mnemonic = "era spike flip first attitude avocado width volume combine wealth assist cactus coach maze scrub language audit educate achieve hub pigeon crucial banner secret";
+#else
+    const char *mnemonic = "ramp volume naive object math scatter ritual coconut planet rug gather soon ketchup clown reward planet coyote kidney ready release title guide amount buzz";
+#endif
 #ifdef DEBUG_TRUST_SIGNER
 	LOGD("----------------------------- MNEMONIC -------------------------------\n");
 	LOGD("%s\n", mnemonic);
@@ -294,7 +299,9 @@ unsigned char *TrustSigner_getWBInitializeData(char *app_id)
 #endif
 
 	generateBip39Seeed (mnemonic, seed, NULL);
+#if 1 // MYSEO
 	memzero ((void *) mnemonic, strlen((char *) mnemonic));
+#endif
 #ifdef DEBUG_TRUST_SIGNER
 	LOGD("----------------------------- SEED -----------------------------------\n");
 	hex_print (hexbuf, seed, sizeof(seed));
@@ -361,6 +368,7 @@ unsigned char *TrustSigner_getWBInitializeData(char *app_id)
 #endif
 
 	// DATA Return /////////////////////////////////////////////////////////////////////////////////
+#if 1
 #ifdef __ANDROID__
 	wb_data = env->NewByteArray (table_length + wb_length);
 	env->SetByteArrayRegion (wb_data, 0, table_length, (jbyte *) table_buffer);
@@ -370,7 +378,24 @@ unsigned char *TrustSigner_getWBInitializeData(char *app_id)
 	memcpy (wb_data, table_buffer, table_length);
 	memcpy (wb_data+table_length, wb_buffer, wb_length);
 #endif
+#else
+	char wb_len_buffer[WB_LEN_BUF_LENGTH] = {0};
+	sprintf (wb_len_buffer, "%08x", table_length);
+#ifdef __ANDROID__
+	wb_data = env->NewByteArray (WB_LEN_BUF_LENGTH + table_length + wb_length);
+	env->SetByteArrayRegion (wb_data, 0, WB_LEN_BUF_LENGTH, (jbyte *) wb_len_buffer);
+	env->SetByteArrayRegion (wb_data, WB_LEN_BUF_LENGTH, table_length, (jbyte *) table_buffer);
+	env->SetByteArrayRegion (wb_data, WB_LEN_BUF_LENGTH + table_length, wb_length, (jbyte *) wb_buffer);
+#else
+	printf ("%d = %d + %d + %d\n", WB_LEN_BUF_LENGTH + table_length + wb_length, WB_LEN_BUF_LENGTH, table_length, wb_length);
+	wb_data = (unsigned char *) malloc ((size_t) (WB_LEN_BUF_LENGTH + table_length + wb_length));
+	memcpy (wb_data, wb_len_buffer, WB_LEN_BUF_LENGTH);
+	memcpy (wb_data + WB_LEN_BUF_LENGTH, table_buffer, table_length);
+	memcpy (wb_data + WB_LEN_BUF_LENGTH + table_length, wb_buffer, wb_length);
+#endif
 
+	memzero (wb_len_buffer, WB_LEN_BUF_LENGTH);
+#endif
 	memzero (table_buffer, table_length);
 	memzero (wb_buffer, wb_length);
 
@@ -383,12 +408,12 @@ unsigned char *TrustSigner_getWBInitializeData(char *app_id)
 extern "C"
 JNIEXPORT jbyteArray JNICALL
 Java_io_talken_trustsigner_TrustSigner_getWBPublicKey(JNIEnv *env, jobject instance,
-													  jbyteArray appID_, jbyteArray wbData_,
-													  jbyteArray coinSymbol_, jint hdDepth,
-													  jint hdChange, jint hdIndex)
+		jbyteArray appID_, jbyteArray wbData_,
+		jbyteArray coinSymbol_, jint hdDepth,
+		jint hdChange, jint hdIndex)
 #else
 extern "C"
-char *TrustSigner_getWBPublicKey(char *app_id, unsigned char *wb_data, int wb_data_len, char *coin_symbol, int hd_depth, int hd_change, int hd_index)
+char *TrustSigner_getWBPublicKey(char *app_id, unsigned char *wb_data, int wb_table_len, char *coin_symbol, int hd_depth, int hd_change, int hd_index)
 #endif
 {
 #ifdef __ANDROID__
@@ -401,7 +426,7 @@ char *TrustSigner_getWBPublicKey(char *app_id, unsigned char *wb_data, int wb_da
 	const int  hd_change = (int) hdChange;
 	const int  hd_index = (int) hdIndex;
 	const int  app_id_len = env->GetArrayLength (appID_);
-	const int wb_data_len = env->GetArrayLength (wbData_);
+	const int  wb_table_len = env->GetArrayLength (wbData_);
 #else
 	char *public_address = NULL;
 	int app_id_len = strlen (app_id);
@@ -412,7 +437,7 @@ char *TrustSigner_getWBPublicKey(char *app_id, unsigned char *wb_data, int wb_da
 	unsigned char seed[BIP39_KEY_STRENGTH/4] = {0};
 	char public_key[BIP32_KEY_LENGTH*2] = {0};
 
-	int wb_length = wb_data_len - WB_TABLE_LENGTH;
+	int wb_length =  wb_table_len - WB_TABLE_LENGTH;
 	unsigned char wb_buffer[BIP39_KEY_STRENGTH*2] = {0};
 	int enc_length = 0;
 	unsigned char enc_buffer[AES256_ENCRYPT_LENGTH] = {0};
@@ -421,14 +446,14 @@ char *TrustSigner_getWBPublicKey(char *app_id, unsigned char *wb_data, int wb_da
 	uint32_t fingerprint = 0;
 	uint32_t bip44_path[BIP44_PATH_DEPTH_MAX] = {0};
 
-    if (hd_depth < 3) {
+	if (hd_depth < 3) {
 #ifdef DEBUG_TRUST_SIGNER
-        LOGD("Error! not support!\n");
+		LOGD("Error! not support!\n");
 #endif
-        return NULL;
-    }
+		return NULL;
+	}
 
-    // SEED WB Decrypt /////////////////////////////////////////////////////////////////////////////
+	// SEED WB Decrypt /////////////////////////////////////////////////////////////////////////////
 	memcpy (wb_buffer, wb_data+WB_TABLE_LENGTH, wb_length);
 	enc_length = trust_signer_encrypt ((char *) wb_data, WB_TABLE_LENGTH, wb_buffer, wb_length, enc_buffer, false);
 	memzero (wb_buffer, wb_length);
@@ -570,7 +595,7 @@ Java_io_talken_trustsigner_TrustSigner_getWBSignatureData(JNIEnv *env, jobject i
 		jbyteArray hashMessage_)
 #else
 extern "C"
-char *TrustSigner_getWBSignatureData(char *app_id, unsigned char *wb_data, int wb_data_len, char *coin_symbol, int hd_depth, int hd_change, int hd_index, char *hash_message)
+char *TrustSigner_getWBSignatureData(char *app_id, unsigned char *wb_data, int  wb_table_len, char *coin_symbol, int hd_depth, int hd_change, int hd_index, unsigned char *hash_message, int hash_len)
 #endif
 {
 #ifdef __ANDROID__
@@ -584,7 +609,8 @@ char *TrustSigner_getWBSignatureData(char *app_id, unsigned char *wb_data, int w
 	const int  hd_index = (int) hdIndex;
 	const char *hash_message = jbyteArry2char (env, hashMessage_);
 	const int  app_id_len = env->GetArrayLength (appID_);
-	const int  wb_data_len = env->GetArrayLength (wbData_);
+	const int  wb_table_len = env->GetArrayLength (wbData_);
+	const int  hash_len = env->GetArrayLength (hashMessage_);
 #else
 	char *signature = NULL;
 	int app_id_len = strlen (app_id);
@@ -593,23 +619,25 @@ char *TrustSigner_getWBSignatureData(char *app_id, unsigned char *wb_data, int w
 	HDNode node;
 	unsigned int coin_type = 0;
 	unsigned char seed[BIP39_KEY_STRENGTH/4] = {0};
-	unsigned char sig_message[SIGN_SIGNATURE_LENGTH] = {0};
+	unsigned char sign_message[(SIGN_SIGNATURE_LENGTH + 1) * SIGN_SIGNATURE_MAX] = {0};
 
-	int wb_length = wb_data_len - WB_TABLE_LENGTH;
+	int wb_length = wb_table_len - WB_TABLE_LENGTH;
 	unsigned char wb_buffer[BIP39_KEY_STRENGTH*2] = {0};
 	int enc_length = 0;
 	unsigned char enc_buffer[AES256_ENCRYPT_LENGTH] = {0};
 	int dec_ret = 0;
 
+	uint32_t hash_sum = 0;
+	uint32_t sign_len = 0;
 	uint32_t fingerprint = 0;
 	uint32_t bip44_path[BIP44_PATH_DEPTH_MAX] = {0};
 
-    if (hd_depth < 3) {
+	if (hd_depth < 3) {
 #ifdef DEBUG_TRUST_SIGNER
-        LOGD("Error! not support!\n");
+		LOGD("Error! not support!\n");
 #endif
-        return NULL;
-    }
+		return NULL;
+	}
 
 	// SEED WB Decrypt /////////////////////////////////////////////////////////////////////////////
 	memcpy (wb_buffer, wb_data+WB_TABLE_LENGTH, wb_length);
@@ -636,6 +664,15 @@ char *TrustSigner_getWBSignatureData(char *app_id, unsigned char *wb_data, int w
 	if (coin_type <= 0) {
 #ifdef DEBUG_TRUST_SIGNER
 		LOGD("Error! Can not find coin type!\n");
+#endif
+		memzero (seed, sizeof(seed));
+		return NULL;
+	}
+
+	hash_sum = hash_len / SIGN_HASH_LENGTH;
+	if (coin_type != COIN_TYPE_BITCOIN && hash_sum > 1) {
+#ifdef DEBUG_TRUST_SIGNER
+		LOGD("Error! Hash message length is incorrect!\n");
 #endif
 		memzero (seed, sizeof(seed));
 		return NULL;
@@ -681,32 +718,84 @@ char *TrustSigner_getWBSignatureData(char *app_id, unsigned char *wb_data, int w
 	// Create Signature ////////////////////////////////////////////////////////////////////////////
 	switch (coin_type) {
 		case COIN_TYPE_BITCOIN: {
-			// Hash size is 32Byte
-			bitcoin_hash_sign(&node, (uint8_t *) hash_message, sig_message);
 #ifdef DEBUG_TRUST_SIGNER
-			LOGD("----------------------------- SIGNATURE BTC --------------------------\n");
-			LOGD("HashMessage : %s\n", hash_message);
-			hex_print (hexbuf, sig_message, SIGN_SIGNATURE_LENGTH);
-			LOGD("Signature : %s\n", hexbuf);
+			LOGD("----------------------------- BTC PRIVATE ----------------------------\n");
+			char private_key[BIP32_KEY_LENGTH*2] = {0};
+			char public_key[BIP32_KEY_LENGTH*2] = {0};
+			hdnode_serialize_private (&node, fingerprint, VERSION_PRIVATE, private_key, sizeof(private_key));
+			LOGD("%s\n", private_key);
+			hdnode_serialize_public (&node, fingerprint, VERSION_PUBLIC, public_key, sizeof(public_key));
+			LOGD("%s\n", public_key);
+
+			LOGD("hash_sum = %d\n", hash_sum);
 #endif
+			for (int i=0; i<(int)hash_sum; i++) {
+				bitcoin_hash_sign(&node, (uint8_t *) hash_message+(i*SIGN_HASH_LENGTH), sign_message+sign_len);
+#ifdef DEBUG_TRUST_SIGNER
+				LOGD("----------------------------- SIGNATURE BTC --------------------------\n");
+				hex_print (hexbuf, (unsigned char *) hash_message+(i*SIGN_HASH_LENGTH), SIGN_HASH_LENGTH);
+				LOGD("HashMessage[%d] : %s\n", i, hexbuf);
+				hex_print (hexbuf, sign_message+sign_len, SIGN_SIGNATURE_LENGTH+1);
+				LOGD("Signature[%d] : %s\n", i, hexbuf);
+#endif
+#if 0 //def DEBUG_TRUST_SIGNER
+			LOGD("----------------------------- BTC PRIVATE ----------------------------\n");
+			char private_key[BIP32_KEY_LENGTH*2] = {0};
+			char public_key[BIP32_KEY_LENGTH*2] = {0};
+			hdnode_serialize_private (&node, fingerprint, VERSION_PRIVATE, private_key, sizeof(private_key));
+			LOGD("xPRI : %s\n", private_key);
+			hex_print (hexbuf, node.private_key, sizeof(node.private_key));
+			LOGD(" PRI : %s\n", hexbuf);
+			hdnode_serialize_public (&node, fingerprint, VERSION_PUBLIC, public_key, sizeof(public_key));
+			LOGD("xPUB : %s\n", public_key);
+			hex_print (hexbuf, node.public_key, sizeof(node.public_key));
+			LOGD(" PUB : %s\n", hexbuf);
+			bitcoin_message_verify ((uint8_t *) hash_message+(i*SIGN_HASH_LENGTH), SIGN_HASH_LENGTH, sign_message+sign_len, (uint8_t *) "moizz8bWVNSL9PaBuASdsp2te2BNUGN5Ds");
+#endif
+                sign_len += SIGN_SIGNATURE_LENGTH;
+                sign_len += 1; // value v
+			}
 			break;
 		}
 		case COIN_TYPE_ETHEREUM: {
-			 ethereum_hash_sign(&node, (uint8_t *) hash_message, sig_message);
+			ethereum_hash_sign(&node, (uint8_t *) hash_message, sign_message);
+			sign_len = SIGN_SIGNATURE_LENGTH;
+			sign_len += 1; // value v
 #ifdef DEBUG_TRUST_SIGNER
-			 LOGD("----------------------------- SIGNATURE ETH --------------------------\n");
-			 LOGD("HashMessage : %s\n", hash_message);
-			 hex_print (hexbuf, sig_message, SIGN_SIGNATURE_LENGTH);
-			 LOGD("Signature : %s\n", hexbuf);
+			LOGD("----------------------------- SIGNATURE ETH --------------------------\n");
+			hex_print (hexbuf, (unsigned char *) hash_message, SIGN_HASH_LENGTH);
+			LOGD("HashMessage : %s\n", hexbuf);
+			hex_print (hexbuf, sign_message, SIGN_SIGNATURE_LENGTH+1);
+			LOGD("Signature : %s\n", hexbuf);
+#endif
+#if 0 //def DEBUG_TRUST_SIGNER
+			LOGD("----------------------------- ETH PRIVATE ----------------------------\n");
+			char private_key[BIP32_KEY_LENGTH*2] = {0};
+			char public_key[BIP32_KEY_LENGTH*2] = {0};
+			hdnode_serialize_private (&node, fingerprint, VERSION_PRIVATE, private_key, sizeof(private_key));
+			LOGD("xPRI : %s\n", private_key);
+			hex_print (hexbuf, node.private_key, sizeof(node.private_key));
+			LOGD(" PRI : %s\n", hexbuf);
+			hdnode_serialize_public (&node, fingerprint, VERSION_PUBLIC, public_key, sizeof(public_key));
+			LOGD("xPUB : %s\n", public_key);
+			hex_print (hexbuf, node.public_key, sizeof(node.public_key));
+			LOGD(" PUB : %s\n", hexbuf);
+			ethereum_message_verify((uint8_t *) hash_message, HASHER_DIGEST_LENGTH, sign_message, (uint8_t *) "11");
 #endif
 			 break;
-		}
+		 }
 		case COIN_TYPE_STELLAR: {
-			stellar_hash_sign(&node, (uint8_t *) hash_message, sig_message);
+			if (hash_len < SIGN_HASH_LENGTH) {
+                stellar_message_sign(&node, (uint8_t *) hash_message, hash_len, sign_message);
+			} else {
+				stellar_hash_sign(&node, (uint8_t *) hash_message, sign_message);
+			}
+			sign_len = SIGN_SIGNATURE_LENGTH;
 #ifdef DEBUG_TRUST_SIGNER
 			LOGD("----------------------------- SIGNATURE XLM --------------------------\n");
-			LOGD("HashMessage : %s\n", hash_message);
-			hex_print (hexbuf, sig_message, SIGN_SIGNATURE_LENGTH);
+			hex_print (hexbuf, (unsigned char *) hash_message, SIGN_HASH_LENGTH);
+			LOGD("HashMessage : %s\n", hexbuf);
+			hex_print (hexbuf, sign_message, sign_len);
 			LOGD("Signature : %s\n", hexbuf);
 #endif
 			break;
@@ -715,10 +804,10 @@ char *TrustSigner_getWBSignatureData(char *app_id, unsigned char *wb_data, int w
 	memzero(&node, sizeof(node));
 
 #ifdef __ANDROID__
-	signature = uchar2JbyteArry (env, sig_message, SIGN_SIGNATURE_LENGTH);
+	signature = uchar2JbyteArry (env, sign_message, sign_len);
 #else
-	signature = (char *) malloc (SIGN_SIGNATURE_LENGTH);
-	memcpy (signature, sig_message, SIGN_SIGNATURE_LENGTH);
+	signature = (char *) malloc (sign_len);
+	memcpy (signature, sign_message, sign_len);
 #endif
 
 	return (signature);
@@ -732,7 +821,7 @@ Java_io_talken_trustsigner_TrustSigner_getWBRecoveryData(JNIEnv *env, jobject in
 		jbyteArray userKey_, jbyteArray serverKey_)
 #else
 extern "C"
-char *TrustSigner_getWBRecoveryData(char *app_id, unsigned char *wb_data, int wb_data_len, char *user_key, int user_key_len, char *server_key, int server_key_len)
+char *TrustSigner_getWBRecoveryData(char *app_id, unsigned char *wb_data, int wb_table_len, char *user_key, int user_key_len, char *server_key, int server_key_len)
 #endif
 {
 #ifdef __ANDROID__
@@ -743,7 +832,7 @@ char *TrustSigner_getWBRecoveryData(char *app_id, unsigned char *wb_data, int wb
 	const char *user_key = jbyteArry2char (env, userKey_);
 	const char *server_key = jbyteArry2char (env, serverKey_);
 	const int  app_id_len = env->GetArrayLength (appID_);
-	const int  wb_data_len = env->GetArrayLength (wbData_);
+	const int  wb_table_len = env->GetArrayLength (wbData_);
 	const int  user_key_len = env->GetArrayLength (userKey_);
 	const int  server_key_len = env->GetArrayLength (serverKey_);
 #else
@@ -753,7 +842,7 @@ char *TrustSigner_getWBRecoveryData(char *app_id, unsigned char *wb_data, int wb
 
 	unsigned char seed[BIP39_KEY_STRENGTH/4] = {0};
 
-	int wb_length = wb_data_len - WB_TABLE_LENGTH;
+	int wb_length = wb_table_len - WB_TABLE_LENGTH;
 	unsigned char wb_buffer[BIP39_KEY_STRENGTH*2] = {0};
 	int enc_length = 0;
 	unsigned char enc_buffer[BIP39_KEY_STRENGTH/4+RANDOM_NONCE_LENGTH] = {0};
@@ -960,12 +1049,12 @@ unsigned char *TrustSigner_setWBRecoveryData(char *app_id, char *user_key, int u
 #endif
 {
 #ifdef __ANDROID__
-    jbyteArray wb_data = NULL;
+	jbyteArray wb_data = NULL;
 
-    const char *app_id = jbyteArry2char (env, appID_);
+	const char *app_id = jbyteArry2char (env, appID_);
 	const char *user_key = jbyteArry2char (env, userKey_);
 	const char *recovery_data = jbyteArry2char (env, recoveryData_);
-    const int  app_id_len = env->GetArrayLength (appID_);
+	const int  app_id_len = env->GetArrayLength (appID_);
 	const int  user_key_len = env->GetArrayLength (userKey_);
 	const int  recovery_data_len = env->GetArrayLength (recoveryData_);
 #else
@@ -1097,40 +1186,19 @@ unsigned char *TrustSigner_setWBRecoveryData(char *app_id, char *user_key, int u
 #ifdef __ANDROID__
 static const char *SIGN = "308201dd30820146020101300d06092a864886f70d010105050030373116301406035504030c0d416e64726f69642044656275673110300e060355040a0c07416e64726f6964310b3009060355040613025553301e170d3138313231313031353132355a170d3438313230333031353132355a30373116301406035504030c0d416e64726f69642044656275673110300e060355040a0c07416e64726f6964310b300906035504061302555330819f300d06092a864886f70d010101050003818d0030818902818100ed259fb16fcc3c21b7b5ce14f3535e221357a800438863eda3671e4a098b52b8f4e966175f84e7b87d5e24211db4f47e2bfbec25c26fb3a5934fd5595df7df495a56a25361782d64983ba7d9f9d6ef50d62f21414eb5e1fc9cd77f8f36d0306b33d55a33ce261559cdb05bb30bf8bc4bd8341a485686f3e7ba6d50a923d2478b0203010001300d06092a864886f70d01010505000381810004255f6af67200e91f8fc345f6e383f23d3e7542dba4bc63747d524a70c640a9f40de0f097c510f8cda222eafb33e5890f444d657c028e68fbb49c91ed27e15bc9c4c794ff71a26f59e28897b110e3e2ff697702f464a0bd0d19eef39b79d1659f54ecdfbb9906db93bc08b99bfe41d60df2faa6592e30e518a3849af5679c30";
 
-static int verifySign(JNIEnv *env);
-
-jint JNI_OnLoad(JavaVM *vm, void *reserved) {
-#if 0
-	JNIEnv *env = NULL;
-	if (vm->GetEnv((void **) &env, JNI_VERSION_1_4) != JNI_OK) {
-		return JNI_ERR;
-	}
-	if (verifySign(env) == JNI_OK) {
-		return JNI_VERSION_1_4;
-	}
-#ifdef DEBUG_TRUST_SIGNER
-	LOGE("Error! Unmatched signatures!");
-#endif
-	return JNI_ERR;
-#else
-    return JNI_VERSION_1_4;
-#endif
-}
-
 static jobject getApplication(JNIEnv *env) {
 	jobject application = NULL;
-	jclass activity_thread_clz = env->FindClass("android/app/ActivityThread");
+	jclass activity_thread_clz = env->FindClass ("android/app/ActivityThread");
 	if (activity_thread_clz != NULL) {
-		jmethodID currentApplication = env->GetStaticMethodID(
-				activity_thread_clz, "currentApplication", "()Landroid/app/Application;");
+		jmethodID currentApplication = env->GetStaticMethodID (activity_thread_clz, "currentApplication", "()Landroid/app/Application;");
 		if (currentApplication != NULL) {
-			application = env->CallStaticObjectMethod(activity_thread_clz, currentApplication);
+			application = env->CallStaticObjectMethod (activity_thread_clz, currentApplication);
 		} else {
 #ifdef DEBUG_TRUST_SIGNER
 			LOGE("Cannot find method: currentApplication() in ActivityThread.");
 #endif
 		}
-		env->DeleteLocalRef(activity_thread_clz);
+		env->DeleteLocalRef (activity_thread_clz);
 	} else {
 #ifdef DEBUG_TRUST_SIGNER
 		LOGE("Cannot find class: android.app.ActivityThread");
@@ -1213,6 +1281,24 @@ static int verifySign(JNIEnv *env) {
 		return JNI_OK;
 	}
 	return JNI_ERR;
+}
+
+jint JNI_OnLoad(JavaVM *vm, void *reserved) {
+#if 0
+	JNIEnv *env = NULL;
+	if (vm->GetEnv((void **) &env, JNI_VERSION_1_4) != JNI_OK) {
+		return JNI_ERR;
+	}
+	if (verifySign(env) == JNI_OK) {
+		return JNI_VERSION_1_4;
+	}
+#ifdef DEBUG_TRUST_SIGNER
+	LOGE("Error! Unmatched signatures!");
+#endif
+	return JNI_ERR;
+#else
+    return JNI_VERSION_1_4;
+#endif
 }
 
 extern "C"
