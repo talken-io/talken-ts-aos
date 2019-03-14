@@ -619,7 +619,11 @@ unsigned char *TrustSigner_getWBSignatureData(char *app_id, unsigned char *wb_da
 	HDNode node;
 	unsigned int coin_type = 0;
 	unsigned char seed[BIP39_KEY_STRENGTH/4] = {0};
+#if 0
 	unsigned char sign_message[(SIGN_SIGNATURE_LENGTH + 1) * SIGN_SIGNATURE_MAX] = {0};
+#else
+	unsigned char *sign_message = NULL;
+#endif
 
 	int wb_length = wb_table_len - WB_TABLE_LENGTH;
 	unsigned char wb_buffer[BIP39_KEY_STRENGTH*2] = {0};
@@ -670,13 +674,15 @@ unsigned char *TrustSigner_getWBSignatureData(char *app_id, unsigned char *wb_da
 	}
 
 	hash_sum = hash_len / SIGN_HASH_LENGTH;
-	if (coin_type != COIN_TYPE_BITCOIN && hash_sum > 1) {
+	if ((coin_type != COIN_TYPE_BITCOIN && hash_sum > 1) || hash_sum > SIGN_SIGNATURE_MAX) {
 #ifdef DEBUG_TRUST_SIGNER
 		LOGD("Error! Hash message length is incorrect!\n");
 #endif
 		memzero (seed, sizeof(seed));
 		return NULL;
 	}
+	sign_message = (unsigned char *) malloc ((SIGN_SIGNATURE_LENGTH + 1) * hash_sum);
+	memset (sign_message, 0, (SIGN_SIGNATURE_LENGTH + 1) * hash_sum);
 
 	// Create HD Node //////////////////////////////////////////////////////////////////////////////
 	memset (&node, 0, sizeof(node));
@@ -808,6 +814,7 @@ unsigned char *TrustSigner_getWBSignatureData(char *app_id, unsigned char *wb_da
 #else
 	signature = (unsigned char *) malloc (sign_len);
 	memcpy (signature, sign_message, sign_len);
+	free (sign_message);
 #endif
 
 	return (signature);
