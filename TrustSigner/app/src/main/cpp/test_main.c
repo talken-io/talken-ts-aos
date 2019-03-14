@@ -24,7 +24,7 @@ int main (void) {
 	char *recovery_data = NULL;
 
 	wb_data = TrustSigner_getWBInitializeData (app_id);
-    
+
 	public_key = TrustSigner_getWBPublicKey (app_id, wb_data, WB_TABLE_LENGTH+WB_ENCDATA_LENGTH, "BTC", 5, 0, 0);
 	free (public_key);
 
@@ -34,11 +34,11 @@ int main (void) {
 	public_key = TrustSigner_getWBPublicKey (app_id, wb_data, WB_TABLE_LENGTH+WB_ENCDATA_LENGTH, "XLM", 3, 0, 0);
 	free (public_key);
 
-    unsigned char *hashMessage_btc = (unsigned char *) str2hex (message_btc, strlen(message_btc));
+	unsigned char *hashMessage_btc = (unsigned char *) str2hex (message_btc, strlen(message_btc));
 	signature = TrustSigner_getWBSignatureData (app_id, wb_data, WB_TABLE_LENGTH+WB_ENCDATA_LENGTH, "BTC", 5, 0, 0, hashMessage_btc, strlen(message_btc)/2);
 	free (signature);
 
-    unsigned char *hashMessage = (unsigned char *) str2hex (message, strlen(message));
+	unsigned char *hashMessage = (unsigned char *) str2hex (message, strlen(message));
 	signature = TrustSigner_getWBSignatureData (app_id, wb_data, WB_TABLE_LENGTH+WB_ENCDATA_LENGTH, "ETH", 5, 0, 0, hashMessage, strlen(message)/2);
 	free (signature);
 

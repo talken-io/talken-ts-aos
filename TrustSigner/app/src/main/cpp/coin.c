@@ -135,21 +135,21 @@ int bitcoin_message_verify(const uint8_t *message, const uint32_t message_len, u
 	}
 
 #if 0 // MYSEO : debug
-    hex_print (hexbuf, pubkey, sizeof(pubkey));
-    printf("pubkey : %s\n", hexbuf);
+	hex_print (hexbuf, pubkey, sizeof(pubkey));
+	printf("pubkey : %s\n", hexbuf);
 #endif
 	// p2pkh
 	if (signature[0] >= 27 && signature[0] <= 34) {
 		size_t len;
 		len = base58_decode_check((char *)address, coins[COIN_INFOR_BITCOIN].curve->hasher_base58, addr_raw, MAX_ADDR_RAW_SIZE);
 #if 0 // MYSEO : debug
-    	hex_print (hexbuf, addr_raw, MAX_ADDR_RAW_SIZE);
-    	printf("addr_raw      : %s\n", hexbuf);
+		hex_print (hexbuf, addr_raw, MAX_ADDR_RAW_SIZE);
+		printf("addr_raw      : %s\n", hexbuf);
 #endif
 		ecdsa_get_address_raw(pubkey, coins[COIN_INFOR_BITCOIN].address_type, coins[COIN_INFOR_BITCOIN].curve->hasher_pubkey, recovered_raw);
 #if 0 // MYSEO : debug
-    	hex_print (hexbuf, recovered_raw, MAX_ADDR_RAW_SIZE);
-    	printf("recovered_raw : %s\n", hexbuf);
+		hex_print (hexbuf, recovered_raw, MAX_ADDR_RAW_SIZE);
+		printf("recovered_raw : %s\n", hexbuf);
 #endif
 		if (memcmp(recovered_raw, addr_raw, len) != 0
 				|| len != address_prefix_bytes_len(coins[COIN_INFOR_BITCOIN].address_type) + 20) {
@@ -268,21 +268,21 @@ int ethereum_message_verify(const uint8_t *message, const uint32_t message_len, 
 	}
 
 #if 0 // MYSEO : debug
-    hex_print (hexbuf, pubkey, sizeof(pubkey));
-    printf("pubkey : %s\n", hexbuf);
+	hex_print (hexbuf, pubkey, sizeof(pubkey));
+	printf("pubkey : %s\n", hexbuf);
 #endif
 
 	memset(hash, 0, sizeof(hash));
 	struct SHA3_CTX ctx;
 	sha3_256_Init(&ctx);
 	sha3_Update(&ctx, pubkey + 1, 64);
-    sha3_Final(&ctx, hash);
+	sha3_Final(&ctx, hash);
 
 #if 0 // MYSEO : debug
-    hex_print (hexbuf, address, 20);
-    printf("address    : %s\n", hexbuf);
-    hex_print (hexbuf, hash + 12, 20);
-    printf("hashpubkey : %s\n", hexbuf);
+	hex_print (hexbuf, address, 20);
+	printf("address    : %s\n", hexbuf);
+	hex_print (hexbuf, hash + 12, 20);
+	printf("hashpubkey : %s\n", hexbuf);
 #endif
 
 	/* result are the least significant 160 bits */

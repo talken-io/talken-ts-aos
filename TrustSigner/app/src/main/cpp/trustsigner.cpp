@@ -739,21 +739,21 @@ char *TrustSigner_getWBSignatureData(char *app_id, unsigned char *wb_data, int  
 				LOGD("Signature[%d] : %s\n", i, hexbuf);
 #endif
 #if 0 //def DEBUG_TRUST_SIGNER
-			LOGD("----------------------------- BTC PRIVATE ----------------------------\n");
-			char private_key[BIP32_KEY_LENGTH*2] = {0};
-			char public_key[BIP32_KEY_LENGTH*2] = {0};
-			hdnode_serialize_private (&node, fingerprint, VERSION_PRIVATE, private_key, sizeof(private_key));
-			LOGD("xPRI : %s\n", private_key);
-			hex_print (hexbuf, node.private_key, sizeof(node.private_key));
-			LOGD(" PRI : %s\n", hexbuf);
-			hdnode_serialize_public (&node, fingerprint, VERSION_PUBLIC, public_key, sizeof(public_key));
-			LOGD("xPUB : %s\n", public_key);
-			hex_print (hexbuf, node.public_key, sizeof(node.public_key));
-			LOGD(" PUB : %s\n", hexbuf);
-			bitcoin_message_verify ((uint8_t *) hash_message+(i*SIGN_HASH_LENGTH), SIGN_HASH_LENGTH, sign_message+sign_len, (uint8_t *) "moizz8bWVNSL9PaBuASdsp2te2BNUGN5Ds");
+				LOGD("----------------------------- BTC PRIVATE ----------------------------\n");
+				char private_key[BIP32_KEY_LENGTH*2] = {0};
+				char public_key[BIP32_KEY_LENGTH*2] = {0};
+				hdnode_serialize_private (&node, fingerprint, VERSION_PRIVATE, private_key, sizeof(private_key));
+				LOGD("xPRI : %s\n", private_key);
+				hex_print (hexbuf, node.private_key, sizeof(node.private_key));
+				LOGD(" PRI : %s\n", hexbuf);
+				hdnode_serialize_public (&node, fingerprint, VERSION_PUBLIC, public_key, sizeof(public_key));
+				LOGD("xPUB : %s\n", public_key);
+				hex_print (hexbuf, node.public_key, sizeof(node.public_key));
+				LOGD(" PUB : %s\n", hexbuf);
+				bitcoin_message_verify ((uint8_t *) hash_message+(i*SIGN_HASH_LENGTH), SIGN_HASH_LENGTH, sign_message+sign_len, (uint8_t *) "moizz8bWVNSL9PaBuASdsp2te2BNUGN5Ds");
 #endif
-                sign_len += SIGN_SIGNATURE_LENGTH;
-                sign_len += 1; // value v
+				sign_len += SIGN_SIGNATURE_LENGTH;
+				sign_len += 1; // value v
 			}
 			break;
 		}
@@ -1010,7 +1010,7 @@ char *TrustSigner_getWBRecoveryData(char *app_id, unsigned char *wb_data, int wb
 #endif
 
 	char recovery_buffer[RECOVERY_BUFFER_LENGTH] = {0};
-    sprintf (recovery_buffer, "{\"iv\":\"%s\",\"v\":1,\"iter\":1,\"ks\":256,\"ts\":64,\"mode\":\"ccm\",\"adata\":\"\",\"cipher\":\"aes\",\"ct\":\"%s\"},{\"iv\":\"%s\",\"v\":1,\"iter\":1,\"ks\":256,\"ts\":64,\"mode\":\"ccm\",\"adata\":\"\",\"cipher\":\"aes\",\"ct\":\"%s\"}", base64_recovery_iv, base64_recovery, base64_userkey_iv, base64_userkey);
+	sprintf (recovery_buffer, "{\"iv\":\"%s\",\"v\":1,\"iter\":1,\"ks\":256,\"ts\":64,\"mode\":\"ccm\",\"adata\":\"\",\"cipher\":\"aes\",\"ct\":\"%s\"},{\"iv\":\"%s\",\"v\":1,\"iter\":1,\"ks\":256,\"ts\":64,\"mode\":\"ccm\",\"adata\":\"\",\"cipher\":\"aes\",\"ct\":\"%s\"}", base64_recovery_iv, base64_recovery, base64_userkey_iv, base64_userkey);
 #ifdef DEBUG_TRUST_SIGNER
 	LOGD("----------------------------- RECOVERY DATA --------------------------\n");
 	LOGD("%s\n", recovery_buffer);
