@@ -30,7 +30,7 @@
 #define COIN_INFOR_ZCASH		5
 #define COIN_INFOR_BITCOINGOLD	6
 
-#define COIN_INFOR_COUNT		7
+#define COIN_INFOR_COUNT		(COIN_INFOR_BITCOINGOLD+1)
 
 const CoinInfo coins[COIN_INFOR_COUNT] = {
 	{"Bitcoin",      " BTC",     2000000, "\x18" "Bitcoin Signed Message:\n",      true, true, true,  false, false,    0,    5, 0x0488b21e, 0x0488ade4,  0, "bc",   0x80000000, SECP256K1_NAME, &secp256k1_info, },
@@ -42,7 +42,7 @@ const CoinInfo coins[COIN_INFOR_COUNT] = {
 	{"Bitcoin Gold", " BTG",      500000, "\x1d" "Bitcoin Gold Signed Message:\n", true, true, true,  true,  true,    38,   23, 0x0488b21e, 0x0488ade4, 79, "btg",  0x8000009c, SECP256K1_NAME, &secp256k1_info, },
 };
 
-#if 0
+#if 1
 #include "bip32_bip39.h"
 char hexbuf[256];
 #endif
@@ -88,8 +88,8 @@ void bitcoin_message_sign(const HDNode *node, const uint8_t *message, const uint
 
 	bitcoin_message_hash(message, message_len, hash);
 
-	if (ecdsa_sign_digest(&secp256k1, node->private_key, hash, signature, &v, NULL) != 0) {
-		printf("### MYSEO : Bitcoin signing failed\n");
+	if (ecdsa_sign_digest(&secp256k1, node->private_key, hash, signature + 1, &v, NULL) != 0) {
+		printf("Error! Bitcoin signing failed\n");
 		return;
 	}
 	// segwit-in-p2sh
@@ -113,6 +113,7 @@ int bitcoin_message_verify(const uint8_t *message, const uint32_t message_len, u
 
 	// check for invalid signature prefix
 	if (signature[0] < 27 || signature[0] > 43) {
+		printf("Failed! Check if signature verifies.\n");
 		return 1;
 	}
 
@@ -127,6 +128,7 @@ int bitcoin_message_verify(const uint8_t *message, const uint32_t message_len, u
 
 	// check if signature verifies the digest and recover the public key
 	if (ecdsa_recover_pub_from_sig(&secp256k1, pubkey, signature + 1, hash, recid) != 0) {
+		printf("Failed! Check if signature verifies.\n");
 		return 3;
 	}
 	// convert public key to compressed pubkey if necessary
@@ -141,18 +143,18 @@ int bitcoin_message_verify(const uint8_t *message, const uint32_t message_len, u
 	// p2pkh
 	if (signature[0] >= 27 && signature[0] <= 34) {
 		size_t len;
-		len = base58_decode_check((char *)address, coins[COIN_INFOR_BITCOIN].curve->hasher_base58, addr_raw, MAX_ADDR_RAW_SIZE);
+		len = base58_decode_check((char *)address, coins[COIN_INFOR_TESTNET].curve->hasher_base58, addr_raw, MAX_ADDR_RAW_SIZE);
 #if 0 // MYSEO : debug
 		hex_print (hexbuf, addr_raw, MAX_ADDR_RAW_SIZE);
 		printf("addr_raw      : %s\n", hexbuf);
 #endif
-		ecdsa_get_address_raw(pubkey, coins[COIN_INFOR_BITCOIN].address_type, coins[COIN_INFOR_BITCOIN].curve->hasher_pubkey, recovered_raw);
+		ecdsa_get_address_raw(pubkey, coins[COIN_INFOR_TESTNET].address_type, coins[COIN_INFOR_TESTNET].curve->hasher_pubkey, recovered_raw);
 #if 0 // MYSEO : debug
 		hex_print (hexbuf, recovered_raw, MAX_ADDR_RAW_SIZE);
 		printf("recovered_raw : %s\n", hexbuf);
 #endif
-		if (memcmp(recovered_raw, addr_raw, len) != 0
-				|| len != address_prefix_bytes_len(coins[COIN_INFOR_BITCOIN].address_type) + 20) {
+		if (memcmp(recovered_raw, addr_raw, len) != 0 || len != address_prefix_bytes_len(coins[COIN_INFOR_TESTNET].address_type) + 20) {
+			printf("Failed! Check if signature verifies.\n");
 			return 2;
 		}
 	}
@@ -194,8 +196,19 @@ int bitcoin_message_verify(const uint8_t *message, const uint32_t message_len, u
 void bitcoin_hash_sign(const HDNode *node, const uint8_t *hash, uint8_t *signature)
 {
 	uint8_t v = 0;
-	ecdsa_sign_digest(&secp256k1, node->private_key, hash, signature + 1, &v, NULL);
+	if (ecdsa_sign_digest(&secp256k1, node->private_key, hash, signature + 1, &v, NULL) != 0) {
+		printf("Error! Bitcoin signing failed\n");
+		return;
+	}
 	signature[0] = 31 + v;
+
+#if 0 // TEST
+	if (ecdsa_verify_digest(&secp256k1, node->public_key, signature + 1, hash) != 0) {
+		printf("### MYSEO : Bitcoin sign veryfy failed\n");
+	} else {
+		printf("### MYSEO : Bitcoin sign veryfy OK!\n");
+	}
+#endif
 }
 
 
@@ -235,11 +248,14 @@ void ethereum_message_sign(const HDNode *node, const uint8_t *message, const uin
 	uint8_t hash[HASHER_DIGEST_LENGTH] = {0};
 
 	if (!hdnode_get_ethereum_pubkeyhash(node, address)) {
+		printf("Error! Ethereum signing failed\n");
 		return;
 	}
+
 	ethereum_message_hash(message, message_len, hash);
+
 	if (ecdsa_sign_digest(&secp256k1, node->private_key, hash, signature, &v, ethereum_is_canonic) != 0) {
-		printf("### MYSEO : Ethereum signing failed\n");
+		printf("Error! Ethereum signing failed\n");
 		return;
 	}
 	signature[64] = 27 + v;
@@ -264,6 +280,7 @@ int ethereum_message_verify(const uint8_t *message, const uint32_t message_len, 
 		v -= 27;
 	}
 	if (v >= 2 || ecdsa_recover_pub_from_sig(&secp256k1, pubkey, signature, hash, v) != 0) {
+		printf("Failed! Check if signature verifies.\n");
 		return -1;
 	}
 
@@ -287,6 +304,7 @@ int ethereum_message_verify(const uint8_t *message, const uint32_t message_len, 
 
 	/* result are the least significant 160 bits */
 	if (memcmp(address, hash + 12, 20) != 0) {
+		printf("Failed! Check if signature verifies.\n");
 		return -1;
 	}
 
@@ -298,9 +316,13 @@ void ethereum_hash_sign(const HDNode *node, const uint8_t *hash, uint8_t *signat
 	uint8_t v = 0;
     uint8_t address[20] = {0};
 	if (!hdnode_get_ethereum_pubkeyhash(node, address)) {
+		printf("Error! Ethereum signing failed\n");
         return;
     }
-	ecdsa_sign_digest(&secp256k1, node->private_key, hash, signature, &v, ethereum_is_canonic);
+	if (ecdsa_sign_digest(&secp256k1, node->private_key, hash, signature, &v, ethereum_is_canonic) != 0) {
+		printf("Error! Ethereum signing failed\n");
+		return;
+	}
 	signature[64] = 27 + v;
 }
 

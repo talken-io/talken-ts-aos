@@ -17,6 +17,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+size_t base64_encoded_size(size_t len);
+size_t base64_decoded_size(size_t len);
+
+void base64_encode_binary(char *out, const unsigned char *in, size_t len);
+int base64_decode_binary(unsigned char *out, const char *in);
+
 char *base64_encode(const char *in, size_t size);
 char *base64_decode(const char *in);
 

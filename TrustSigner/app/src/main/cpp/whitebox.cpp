@@ -9,6 +9,7 @@
  * Edit History
  * When            Who         What, Where, Why
  * 2018/12/20      myseo       create.
+ * 2019/03/27      myseo       table file save.
  ******************************************************************************/
 
 #include "whitebox.h"
@@ -24,7 +25,7 @@ int trust_signer_create_table(char **table)
 {
 	std::string outTable;
 	char *phrase;
-	unsigned char keyFromString[AES_BYTES];
+	unsigned char keyFromString[AES_BYTES] = {0};
 
 	GenericAES defAES;
 	defAES.init(0x11B, 0x03);
@@ -67,8 +68,10 @@ int trust_signer_create_table(char **table)
 
 int trust_signer_encrypt(char *table, int table_length, unsigned char *input, int in_length, unsigned char *output, bool encrypt)
 {
-	bool pkcs5Padding=true;
-	bool cbc=true;
+	bool cbc = true;
+	bool pkcs5Padding = true;
+	time_t cacc = 0;
+	clock_t pacc = 0;
 	unsigned char ivFromString[N_BYTES] = {0};
 
 	GenericAES defAES;
@@ -85,9 +88,6 @@ int trust_signer_encrypt(char *table, int table_length, unsigned char *input, in
 
 	genAES->loadString(inTable);
 
-	time_t cacc=0;
-	clock_t pacc = 0;
-
 	InputObjectBuffer<BYTE> ioib(in_length);
 	ioib.write(input, in_length);
 	InputObjectBuffer<BYTE> ioob(in_length*N_BYTES);
@@ -95,11 +95,93 @@ int trust_signer_encrypt(char *table, int table_length, unsigned char *input, in
 	EncTools::processData(!encrypt, genAES, &generator, &ioib, &ioob, &coding, pkcs5Padding, cbc, ivFromString, &cacc, &pacc);
 
 	//cout << "### MYSEO : Enc Length = " << ioob.getPos() << endl;
-	ioob.read(output, ioob.getPos());
+	int length = ioob.getPos();
+	ioob.read(output, length);
 
 	delete genAES;
 
-	return ioob.getPos();
+//	ioob.fill((unsigned char) 0xFF);
+//	ioob.fill((unsigned char) 0x55);
+//	ioob.fill((unsigned char) 0x00);
+
+	return length;
+}
+
+int trust_signer_create_table_fp(char *filename)
+{
+	int ret = 0;
+	unsigned char keyFromString[AES_BYTES] = {0};
+
+	if (filename == NULL || strlen(filename) < 1)
+		return -1;
+
+	GenericAES defAES;
+	defAES.init(0x11B, 0x09);
+
+	WBAESGenerator generator;
+	WBAES *genAES = new WBAES;
+
+	ExtEncoding coding;
+	generator.generateExtEncoding(&coding, WBAESGEN_EXTGEN_ID);
+
+	for(int i=0; i<AES_BYTES; i++){
+		keyFromString[i] = (unsigned char)(phrand() % 0x100);
+	}
+
+	generator.generateTables(keyFromString, KEY_SIZE_16, genAES, &coding, true);
+	generator.generateTables(keyFromString, KEY_SIZE_16, genAES, &coding, false);
+
+	for(int i=0; i<AES_BYTES; i++){
+		keyFromString[i] = (unsigned char) 0xFF;
+		keyFromString[i] = (unsigned char) 0x55;
+		keyFromString[i] = (unsigned char) 0x00;
+	}
+
+	//generator.save("/tmp/myseo_aes", genAES, &coding);
+	ret = genAES->save(filename);
+
+	delete genAES;
+
+	return ret;
+}
+
+int trust_signer_encrypt_fp(char *filename, unsigned char *input, int in_length, unsigned char *output, bool encrypt)
+{
+	bool cbc = true;
+	bool pkcs5Padding = true;
+	time_t cacc = 0;
+	clock_t pacc = 0;
+	unsigned char ivFromString[N_BYTES] = {0};
+
+	if (filename == NULL || strlen(filename) < 1)
+		return -1;
+
+	GenericAES defAES;
+	defAES.init(0x11B, 0x09);
+
+	WBAESGenerator generator;
+	WBAES *genAES = new WBAES;
+	genAES->load(filename);
+
+	ExtEncoding coding;
+	generator.generateExtEncoding(&coding, WBAESGEN_EXTGEN_ID);
+
+	InputObjectBuffer<BYTE> ioib(in_length);
+	ioib.write(input, in_length);
+	InputObjectBuffer<BYTE> ioob(in_length*N_BYTES);
+
+	EncTools::processData(!encrypt, genAES, &generator, &ioib, &ioob, &coding, pkcs5Padding, cbc, ivFromString, &cacc, &pacc);
+
+	int length = ioob.getPos();
+	ioob.read(output, length);
+
+	delete genAES;
+
+//	ioob.fill((unsigned char) 0xFF);
+//	ioob.fill((unsigned char) 0x55);
+//	ioob.fill((unsigned char) 0x00);
+
+	return length;
 }
 
 #ifdef TEST_WHITEBOX

@@ -40,7 +40,7 @@
 
 // use deterministic signatures
 #ifndef USE_RFC6979
-#define USE_RFC6979 0 // MYSEO : 1->0
+#define USE_RFC6979 1
 #endif
 
 // implement BIP32 caching

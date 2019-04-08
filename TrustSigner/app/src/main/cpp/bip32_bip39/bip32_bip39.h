@@ -20,8 +20,7 @@ extern "C" {
 #define VERSION_PUBLIC  0x0488b21e
 #endif
 
-//#define FROMHEX_MAXLEN 1024 // MYSEO : 512 -> 1024
-#define FROMHEX_MAXLEN 2048000 // MYSEO : 512 -> 1024
+#define FROMHEX_MAXLEN 1024 // MYSEO : 512 -> 1024
 
 const char *generateMnemonic(int strength);
 void  generateBip39Seeed(const char *mnemonic,uint8_t seed[64],const char *passphrase);

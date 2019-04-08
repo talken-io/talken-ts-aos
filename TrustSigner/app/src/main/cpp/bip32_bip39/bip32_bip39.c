@@ -31,7 +31,7 @@ const uint8_t *fromhex(const char *str)
 	return buf;
 }
 
-#if 1 // MYSEO
+#if 1 // DEBUG
 unsigned char *str2hex(char *string, int length)
 {
 	static unsigned char buf[FROMHEX_MAXLEN];
@@ -47,9 +47,7 @@ unsigned char *str2hex(char *string, int length)
 	}
 	return buf;
 }
-#endif
 
-#if 1 // DEBUG
 void print_hex(uint8_t *s)
 {
 	size_t len = strlen((char*)s);

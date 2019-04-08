@@ -6,9 +6,14 @@ import android.content.pm.PackageManager;
 import android.content.pm.Signature;
 
 import android.content.Context;
-import android.text.TextUtils;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
+import android.text.TextUtils;
+
+import java.io.File;
+//import java.io.FileInputStream;
+//import java.io.FileOutputStream;
+//import java.io.IOException;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
@@ -19,18 +24,19 @@ public class TrustSigner {
         System.loadLibrary("trustsigner");
     }
 
-    public static final String version = "0.9.3";
-    private static final String PREF_KEY_WB = "io.talken.trustsigner.wb";
+    public static final String version = "0.9.6";
+    private static final String PREFERENCE_WB = "trustsigner.wbd";
 
     private Context mContext;
-    private byte[] mAppID = null;
-    private byte[] mWbData = null;
+    private String mAppID;
+    private String mWbPath;
+    private byte[] mWbData;
 
-    private native byte[] getWBInitializeData (byte[] appID);
-    private native byte[] getWBPublicKey      (byte[] appID, byte[] wbData, byte[] coinSymbol, int hdDepth, int hdChange, int hdIndex);
-    private native byte[] getWBSignatureData  (byte[] appID, byte[] wbData, byte[] coinSymbol, int hdDepth, int hdChange, int hdIndex, byte[] hashMessage);
-//    private native byte[] getWBRecoveryData   (byte[] appID, byte[] wbData, byte[] userKey, byte[] serverKey);
-    private native byte[] setWBRecoveryData   (byte[] appID, byte[] userKey, byte[] recoveryData);
+    private native byte[] getWBInitializeData (String appID, String filePath);
+    private native byte[] getWBPublicKey      (String appID, String filePath, byte[] wbData, String coinSymbol, int hdDepth, int hdChange, int hdIndex);
+    private native byte[] getWBSignatureData  (String appID, String filePath, byte[] wbData, String coinSymbol, int hdDepth, int hdChange, int hdIndex, byte[] hashMessage);
+    private native byte[] getWBRecoveryData   (String appID, String filePath, byte[] wbData, String userKey, String serverKey);
+    private native byte[] setWBRecoveryData   (String appID, String filePath, String userKey, String recoveryData);
 
     private native void test1 ();
 
@@ -85,184 +91,271 @@ public class TrustSigner {
         return prefs.getString(key, defValue);
     }
 
+//    private boolean putWBDataFile (Context context) {
+//        if (mWbData == null) {
+//            System.out.println("[TrustSigner] : WB Data is null.");
+//            return false;
+//        }
+//
+//        FileOutputStream fos = null;
+//        try {
+//            File pFile = new File(mWbPath + PREFERENCE_WB);
+//            fos = new FileOutputStream(pFile);
+//            fos.write(mWbData, 0, mWbData.length);
+//        } catch (IOException e) {
+//            System.out.println(e);
+//        } finally {
+//            try {
+//                fos.close();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//        return true;
+//    }
+
+//    private boolean getWBDataFile (Context context) {
+//        File pFile = new File(mWbPath + "/" + PREFERENCE_WB);
+//        if(!pFile.exists()) {
+//            System.out.println("[TrustSigner] : WB Data file is not found.");
+//            new File(mWbPath).mkdirs();
+//            return false;
+//        }
+//
+//        int readcount = 0;
+//        FileInputStream fis = null;
+//        try {
+//            fis = new FileInputStream(pFile);
+//            readcount = (int) pFile.length();
+//            mWbData = new byte[readcount];
+//            fis.read(mWbData);
+//        } catch (IOException e) {
+//            System.out.println(e);
+//        } finally {
+//            try {
+//                fis.close();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//        return true;
+//    }
+
     public TrustSigner (Context context, String appID) {
         mContext = context;
-        mAppID = appID.getBytes();
-        System.out.println("### MYSEO : sign = " + getSignJava(context));
+        mAppID = new String(appID);
+        mWbPath = new String(mContext.getFilesDir() + "");
+
+        File pFile = new File(mWbPath + "/" + PREFERENCE_WB);
+        if(!pFile.exists()) {
+            System.out.println("[TrustSigner] : WB table file is not found.");
+            new File(mWbPath).mkdirs();
+        }
+
+        System.out.println("[TrustSigner] : appSign = " + getSignJava(mContext));
+        System.out.println("[TrustSigner] : filePath = " + mWbPath + "/" + PREFERENCE_WB);
     }
 
     public void initialize () {
         //저장된 WB데이터가 있는지 체크
-        System.out.println("### MYSEO : TIME CHECK #1");
-        String strWbData = getStringSharedPreference(PREF_KEY_WB, "");
+        System.out.println("### MYSEO : TIME CHECK #1 - START");
+        String strWbData = getStringSharedPreference(PREFERENCE_WB, "");
 
         System.out.println("### MYSEO : TIME CHECK #2");
         if(TextUtils.isEmpty(strWbData)) {
             //WB데이터생성
-            mWbData = getWBInitializeData(mAppID);
+            mWbData = getWBInitializeData(mAppID, mWbPath);
+            if (mWbData == null) {
+                System.out.println("Error! : WB Initialize failed.");
+                throw new NullPointerException();
+            }
 
             System.out.println("### MYSEO : TIME CHECK #3");
-            putStringSharedPreference(PREF_KEY_WB, byteArrayToHexString(mWbData));
+            putStringSharedPreference(PREFERENCE_WB, byteArrayToHexString(mWbData));
 
-            System.out.println("### MYSEO : TIME CHECK #4");
-        }else {
+            System.out.println("### MYSEO : TIME CHECK #4 - END");
+        } else {
             mWbData = hexStringToByteArray(strWbData);
         }
     }
 
-    public void finalize() {
-        Arrays.fill(mAppID, (byte) 0xFF);
-        Arrays.fill(mAppID, (byte) 0x55);
-        Arrays.fill(mAppID, (byte) 0x00);
+//    public void initialize () {
+//        System.out.println("### MYSEO : TIME CHECK #1");
+//        if (mWbData == null || mWbData.length <= 0) {
+//            if (getWBDataFile(mContext) == false) {
+//                System.out.println("### MYSEO : TIME CHECK #2");
+//                mWbData = getWBInitializeData(mAppID, mWbPath);
+//                if (mWbData == null || mWbData.length <= 0) {
+//                    System.out.println("[TrustSigner] : Error! WB initialize failed.");
+//                    return;
+//                }
+//                System.out.println("### MYSEO : TIME CHECK #3");
+//                if (putWBDataFile(mContext) == false) {
+//                    System.out.println("[TrustSigner] : Error! WB initialize write failed.");
+//                    return;
+//                }
+//            }
+//        }
+//        System.out.println("### MYSEO : TIME CHECK #4");
+//    }
 
+    public void finalize() {
         Arrays.fill(mWbData, (byte) 0xFF);
         Arrays.fill(mWbData, (byte) 0x55);
         Arrays.fill(mWbData, (byte) 0x00);
     }
 
     public String getPublicKey (String coinSym, int hdDepth, int hdChange, int hdIndex) {
-        if (mAppID == null) {
+        if (TextUtils.isEmpty(mAppID) || mAppID.length() <= 0) {
             System.out.println("[TrustSigner] : App ID is empty!");
             return null;
-        }
-        if (mWbData == null) {
+        } else if (mWbData == null || mWbData.length <= 0) {
             System.out.println("[TrustSigner] : WB data is empty!");
             return null;
-        }
-        if (coinSym == null) {
+        } else if (TextUtils.isEmpty(coinSym) || coinSym.length() <= 0) {
             System.out.println("[TrustSigner] : Coin symbol is empty!");
             return null;
-        }
-        if (hdDepth < 3 || hdDepth > 5) {
+        } else if (hdDepth < 3 || hdDepth > 5) {
             System.out.println("[TrustSigner] : HD depth value invaild! (3 ~ 5)");
             return null;
-        }
-        if (coinSym == "XLM" && hdDepth != 3) {
+        } else if (coinSym.equals("XLM") && hdDepth != 3) {
             System.out.println("[TrustSigner] : XLM HD depth value invaild! (3)");
             return null;
-        }
-        if (hdChange < 0 || hdChange > 1) {
+        } else if (hdChange < 0 || hdChange > 1) {
             System.out.println("[TrustSigner] : HD change value invaild! (0 ~ 1)");
             return null;
-        }
-        if (hdIndex < 0) {
+        } else if (hdIndex < 0) {
             System.out.println("[TrustSigner] : HD index value invaild!");
             return null;
         }
-        byte[] pubAddr = getWBPublicKey (mAppID, mWbData, coinSym.getBytes(), hdDepth, hdChange, hdIndex);
-        String publicAddress = null;
+
+        byte[] pubKey = getWBPublicKey (mAppID, mWbPath, mWbData, coinSym, hdDepth, hdChange, hdIndex);
+        if (pubKey == null) {
+            return null;
+        }
+
+        String publicKey = null;
         try {
-            publicAddress = new String(pubAddr, "UTF-8");
+            publicKey = new String(pubKey, "UTF-8");
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
-        return publicAddress;
+
+        return publicKey;
     }
 
     public String getAccountPublicKey (String coinSym) {
-        if (mAppID == null) {
+        if (TextUtils.isEmpty(mAppID) || mAppID.length() <= 0) {
             System.out.println("[TrustSigner] : App ID is empty!");
             return null;
-        }
-        if (mWbData == null) {
+        } else if (mWbData == null || mWbData.length <= 0) {
             System.out.println("[TrustSigner] : WB data is empty!");
             return null;
-        }
-        if (coinSym == null) {
+        } else if (TextUtils.isEmpty(coinSym) || coinSym.length() <= 0) {
             System.out.println("[TrustSigner] : Coin symbol is empty!");
             return null;
         }
-        byte[] pubAddr = getWBPublicKey (mAppID, mWbData, coinSym.getBytes(), 3, 0, 0);
-        String publicAddress = null;
+
+        byte[] pubKey = getWBPublicKey (mAppID, mWbPath, mWbData, coinSym, 3, 0, 0);
+        if (pubKey == null) {
+            return null;
+        }
+
+        String publicKey = null;
         try {
-            publicAddress = new String(pubAddr, "UTF-8");
+            publicKey = new String(pubKey, "UTF-8");
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
-        return publicAddress;
+
+        return publicKey;
     }
 
     public String getSignatureData (String coinSym, int hdDepth, int hdChange, int hdIndex, String hashMessage) {
-        if (mAppID == null) {
+        if (TextUtils.isEmpty(mAppID) || mAppID.length() <= 0) {
             System.out.println("[TrustSigner] : App ID is empty!");
             return null;
-        }
-        if (mWbData == null) {
+        } else if (mWbData == null || mWbData.length <= 0) {
             System.out.println("[TrustSigner] : WB data is empty!");
             return null;
-        }
-        if (coinSym == null) {
+        } else if (TextUtils.isEmpty(coinSym) || coinSym.length() <= 0) {
             System.out.println("[TrustSigner] : Coin symbol is empty!");
             return null;
-        }
-        if (hdDepth < 3 || hdDepth > 5) {
+        } else if (hdDepth < 3 || hdDepth > 5) {
             System.out.println("[TrustSigner] : HD depth value invaild! (3 ~ 5)");
             return null;
-        }
-        if (coinSym == "XLM" && hdDepth != 3) {
+        } else if (coinSym.equals("XLM") && hdDepth != 3) {
             System.out.println("[TrustSigner] : XLM HD depth value invaild! (3)");
             return null;
-        }
-        if (hdChange < 0 || hdChange > 1) {
+        } else if (hdChange < 0 || hdChange > 1) {
             System.out.println("[TrustSigner] : HD change value invaild! (0 ~ 1)");
             return null;
-        }
-        if (hdIndex < 0) {
+        } else if (hdIndex < 0) {
             System.out.println("[TrustSigner] : HD index value invaild!");
             return null;
-        }
-        if (hashMessage == null) {
+        } else if (TextUtils.isEmpty(hashMessage) || hashMessage.length() <= 0) {
             System.out.println("[TrustSigner] : Hash message is empty!");
             return null;
         }
-        byte[] signature = getWBSignatureData (mAppID, mWbData, coinSym.getBytes(), hdDepth, hdChange, hdIndex, hexStringToByteArray(hashMessage));
+
+        byte[] signature = getWBSignatureData (mAppID, mWbPath, mWbData, coinSym, hdDepth, hdChange, hdIndex, hexStringToByteArray(hashMessage));
+        if (signature == null) {
+            return null;
+        }
+
         return byteArrayToHexString(signature);
     }
 
-    // 1번만 받을수 있을수 있는 체크 루틴 필요 (보안상) => getWBInitializeData()로 병합하여 wb_table_data와 1번만 가져오도록 변경
     public String getRecoveryData (String userKey, String serverKey) {
-//        if (mAppID == null) {
-//            System.out.println("[TrustSigner] : App ID is empty!");
-//            return null;
-//        }
-//        if (mWbData == null) {
-//            System.out.println("[TrustSigner] : WB data is empty!");
-//            return null;
-//        }
-//        if (userKey == null) {
-//            System.out.println("[TrustSigner] : User key is empty!");
-//            return null;
-//        }
-//        if (serverKey == null) {
-//            System.out.println("[TrustSigner] : Server key is empty!");
-//            return null;
-//        }
-//        byte[] recovData = getWBRecoveryData (mAppID, mWbData, userKey.getBytes(), serverKey.getBytes());
+        if (TextUtils.isEmpty(mAppID) || mAppID.length() <= 0) {
+            System.out.println("[TrustSigner] : App ID is empty!");
+            return null;
+        } else if (mWbData == null || mWbData.length <= 0) {
+            System.out.println("[TrustSigner] : WB data is empty!");
+            return null;
+        } else if (TextUtils.isEmpty(userKey) || userKey.length() <= 0) {
+            System.out.println("[TrustSigner] : User key is empty!");
+            return null;
+        } else if (TextUtils.isEmpty(serverKey) || serverKey.length() <= 0) {
+            System.out.println("[TrustSigner] : Server key is empty!");
+            return null;
+        }
+
+        byte[] recovData = getWBRecoveryData (mAppID, mWbPath, mWbData, userKey, serverKey);
+        if (recovData == null) {
+            return null;
+        }
+
         String recoveryData = null;
-//        try {
-//            recoveryData = new String(recovData, "UTF-8");
-//        } catch (UnsupportedEncodingException e) {
-//            e.printStackTrace();
-//        }
+        try {
+            recoveryData = new String(recovData, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+
         return recoveryData;
     }
 
-    // 이미 복구되어 있는지 체크 루틴 필요 (보안상)
     public boolean setRecoveryData (String userKey, String recoveryData) {
-        if (mAppID == null) {
+        if (TextUtils.isEmpty(mAppID) || mAppID.length() <= 0) {
             System.out.println("[TrustSigner] : App ID is empty!");
             return false;
-        }
-        if (userKey == null) {
+        } else if (TextUtils.isEmpty(userKey) || userKey.length() <= 0) {
             System.out.println("[TrustSigner] : userKey is empty!");
             return false;
-        }
-        if (recoveryData == null) {
+        } else if (TextUtils.isEmpty(recoveryData) || recoveryData.length() <= 0) {
             System.out.println("[TrustSigner] : Recovery Data is empty!");
             return false;
         }
-        mWbData = setWBRecoveryData (mAppID, userKey.getBytes(), recoveryData.getBytes());
-        putStringSharedPreference(PREF_KEY_WB, byteArrayToHexString(mWbData));
+
+        mWbData = setWBRecoveryData (mAppID, mWbPath, userKey, recoveryData);
+        if (mWbData == null) {
+            System.out.println("Error! : WB Initialize failed.");
+            throw new NullPointerException();
+        }
+
+        putStringSharedPreference(PREFERENCE_WB, byteArrayToHexString(mWbData));
+
         return true;
     }
 

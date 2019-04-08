@@ -68,7 +68,7 @@
 #if 0 // MYSEO
 #define N_ROUNDS        10      // AES rounds
 #else
-#define N_ROUNDS        3       // AES rounds
+#define N_ROUNDS        9       // AES rounds
 #endif
 #define N_SECTIONS      4       // 4 independent groups in one round
 #define N_XOR_GROUPS    6       // 3 XOR tables to combine MIX Col, 3 XOR tables to combine MB

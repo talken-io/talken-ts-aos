@@ -15,8 +15,8 @@
 #ifndef TRUST_SINER_COIN_H
 #define TRUST_SINER_COIN_H
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "bip32_bip39.h"
@@ -42,18 +42,26 @@ extern "C" {
 
 #define BIP44_VAL_HARDENED			0x80000000
 #define BIP44_VAL_PURPOSE			44
+#if 0 // MAINNET
 #define BIP44_VAL_BITCOIN			0
+#else
+#define BIP44_VAL_BITCOIN			1
+#endif
 #define BIP44_VAL_ETHEREUM			60
 #define BIP44_VAL_STELLAR			148
 
 #define SIGN_HASH_LENGTH			32
 #define SIGN_SIGNATURE_LENGTH		64
 #define SIGN_SIGNATURE_MAX			5
+#define SIGN_SIGNATURE_MAX_LENGTH	((SIGN_SIGNATURE_LENGTH+1)*SIGN_SIGNATURE_MAX)
 
 #define MNEMONIC_MAX_LENGTH			1024 // magic number calculated from wordlists
 
 #define RANDOM_NONCE_LENGTH			32
+#define AES256_IV_LENGTH			16
 #define AES256_ENCRYPT_LENGTH		64
+
+#define RECOVERY_HEADER_LENGTH		118
 #define RECOVERY_BUFFER_LENGTH		1024
 #define TEMP_BUFFER_LENGTH			512
 

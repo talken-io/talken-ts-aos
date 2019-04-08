@@ -9,6 +9,7 @@
  * Edit History
  * When            Who         What, Where, Why
  * 2018/12/20      myseo       create.
+ * 2019/03/27      myseo       table file save.
  ******************************************************************************/
 
 #ifndef TRUST_SINER_WHITEBOC_H
@@ -23,20 +24,11 @@
 extern "C" {
 #endif
 
-#if defined(__LINUX__)
-#define WB_TABLE_LENGTH			1275881 // magic number
-#elif defined(__aarch64__)
-#define WB_TABLE_LENGTH			1275881 // magic number // 1275881 // 1107961
-#else
-#define WB_TABLE_LENGTH			1260549 // magic number
-#endif
-
-#define WB_ENCDATA_LENGTH		80 // magic number
-
-#define WB_LEN_BUF_LENGTH		8
-
 int trust_signer_create_table(char **table);
 int trust_signer_encrypt(char *table, int table_length, unsigned char *input, int in_length, unsigned char *output, bool encrypt);
+
+int trust_signer_create_table_fp(char *filename);
+int trust_signer_encrypt_fp(char *filename, unsigned char *input, int in_length, unsigned char *output, bool encrypt);
 
 #if defined(__cplusplus)
 }

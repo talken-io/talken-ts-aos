@@ -92,19 +92,31 @@ BIP32_BIP39_OBJECT_FILE += $(BIP32_BIP39_SOURCE_FILE:.c=.o)
 WHITEBOX_OBJECT_FILE += $(WHITEBOX_SOURCE_FILE:.cpp=.o)
 TRUSTSIGNER_OBJECT_FILE += $(TRUSTSIGNER_SOURCE_FILE:.cpp=.o)
 
-#LIBRARY_OBJECT_FILE  = $(ED25519_OBJECT_FILE)
-#LIBRARY_OBJECT_FILE += $(SECP256K1_OBJECT_FILE)
 LIBRARY_OBJECT_FILE += $(BIP32_BIP39_OBJECT_FILE)
 LIBRARY_OBJECT_FILE += $(WHITEBOX_OBJECT_FILE)
 LIBRARY_OBJECT_FILE += $(TRUSTSIGNER_OBJECT_FILE)
+#LIBRARY_OBJECT_FILE += $(SECP256K1_OBJECT_FILE)
+#LIBRARY_OBJECT_FILE  = $(ED25519_OBJECT_FILE)
+
+#DEF_OS = __ANDROID__
+#DEF_OS = __APPLE__
+DEF_OS = __LINUX__
+
+DEF_WRITER = __FILES__
+#DEF_WRITER = __MEMORY__
 
 CC = gcc
 CXX = c++
 AR = ar
 RANLIB = ranlib
 
-CXXFLAGS = -O3 -g -std=c++11 -fPIC -W -Wall -Wno-unused-parameter -frtti -fexceptions -D__LINUX__
-CFLAGS = -O3 -g -std=gnu99 -fPIC -W -Wall -Wno-unused-parameter -Wextra -Wimplicit-function-declaration -Wredundant-decls -Wstrict-prototypes -Wundef -Wshadow -Wpointer-arith -Wformat -Wreturn-type -Wsign-compare -Wmultichar -Wformat-nonliteral -Winit-self -Wuninitialized -Wformat-security -Werror -D__LINUX__
+CXXFLAGS = -O3 -g -std=c++11 -fPIC -W -Wall -Wno-unused-parameter -frtti -fexceptions -D$(DEF_OS) -D$(DEF_WRITER)
+#CFLAGS = -O3 -g -std=gnu99 -fPIC -W -Wall -Wno-unused-parameter -Wextra -Wimplicit-function-declaration -Wredundant-decls -Wstrict-prototypes -Wundef -Wshadow -Wpointer-arith -Wformat -Wreturn-type -Wsign-compare -Wmultichar -Wformat-nonliteral -Winit-self -Wuninitialized -Wformat-security -Werror -D_$(DEF_OS) -D$(DEF_WRITER)
+CFLAGS = -O3 -g -std=gnu99 -fPIC -W -Wall -Wno-unused-parameter -Wextra -Wimplicit-function-declaration -Wredundant-decls -Wstrict-prototypes -Wundef -Wshadow -Wpointer-arith -Wformat -Wreturn-type -Wsign-compare -Wmultichar -Wformat-nonliteral -Winit-self -Wuninitialized -Wformat-security -D$(DEF_OS) -D$(DEF_WRITER)
+#CFLAGS += -DHAVE_CONFIG_H -DSECP256K1_BUILD -pedantic -Wnested-externs -Wno-long-long -Wno-overlength-strings -fvisibility=hidden
+
+CXXFLAGS += -DDEBUG_TRUST_SIGNER
+CFLAGS   += -DDEBUG_TRUST_SIGNER
 
 LDFLAGS  = -lntl -lboost_program_options-mt -lboost_serialization-mt -lboost_iostreams-mt -lboost_random-mt -lboost_regex-mt -lboost_system-mt
 LDFLAGS += -L/usr/local/lib
@@ -113,7 +125,8 @@ LDFLAGS += -L/usr/local/lib
 INC_PATHS  = -I./include -I./whitebox -I./bip32_bip39 -I./bip32_bip39/aes
 INC_PATHS += -I/use/local/include
 
-all: clean lib test 
+#all: clean lib test 
+all: lib test 
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) $(INC_PATHS) -o $@ $<

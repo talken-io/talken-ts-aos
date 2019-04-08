@@ -577,9 +577,7 @@ void hdnode_fill_public_key(HDNode *node)
 #endif
 }
 
-#if USE_ETHEREUM
-#include "bip32_bip39.h"
-char hexbuf[256];
+#if USE_ETHEREUM // MYSEO
 int hdnode_get_ethereum_pubkeyhash(const HDNode *node, uint8_t *pubkeyhash)
 {
 	uint8_t buf[65];
@@ -587,9 +585,6 @@ int hdnode_get_ethereum_pubkeyhash(const HDNode *node, uint8_t *pubkeyhash)
 
 	/* get uncompressed public key */
 	ecdsa_get_public_key65(node->curve->params, node->private_key, buf);
-
-    hex_print (hexbuf, buf, sizeof(buf));
-    printf("nodepubkey : %s\n", hexbuf);
 
 	/* compute sha3 of x and y coordinate without 04 prefix */
 	sha3_256_Init(&ctx);
@@ -600,9 +595,6 @@ int hdnode_get_ethereum_pubkeyhash(const HDNode *node, uint8_t *pubkeyhash)
 	sha3_Final(&ctx, buf);
 #endif
 
-
-    hex_print (hexbuf, buf + 12, 20);
-    printf("nodehashpubkey : %s\n", hexbuf);
 	/* result are the least significant 160 bits */
 	memcpy(pubkeyhash, buf + 12, 20);
 

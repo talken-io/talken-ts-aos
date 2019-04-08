@@ -6,7 +6,7 @@ android {
         minSdkVersion 19
         targetSdkVersion 28
         versionCode 1
-        versionName "0.9.3"
+        versionName "0.9.6"
         archivesBaseName = "truster_signer"
         version = android.defaultConfig.versionName
         ndk {
@@ -15,7 +15,6 @@ android {
         externalNativeBuild {
             cmake {
                 cppFlags "-O3 -g -std=c++11 -fPIC -W -Wall -frtti -fexceptions"
-//                cFlags "-DDEBUG_PRINT -std=gnu99 -O3 -DNDEBUG -fPIC -W -Wimplicit-function-declaration -Wredundant-decls -Wundef -Wpointer-arith -Wformat -Wreturn-type -Wsign-compare -Wmultichar -Wformat-nonliteral -Winit-self -Wuninitialized -Wformat-security -Werror"
                 cFlags "-O3 -g -std=gnu99 -fPIC -W -Wall -Wextra -Wimplicit-function-declaration -Wredundant-decls -Wstrict-prototypes -Wundef -Wshadow -Wpointer-arith -Wformat -Wreturn-type -Wsign-compare -Wmultichar -Wformat-nonliteral -Winit-self -Wuninitialized -Wformat-security -Werror"
             }
         }
