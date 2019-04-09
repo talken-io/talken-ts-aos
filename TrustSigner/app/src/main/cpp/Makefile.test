@@ -105,9 +105,10 @@ DEF_OS = __LINUX__
 DEF_WRITER = __FILES__
 #DEF_WRITER = __MEMORY__
 
-CC = gcc
+CC = cc
 CXX = c++
 AR = ar
+AS = as
 RANLIB = ranlib
 
 CXXFLAGS = -O3 -g -std=c++11 -fPIC -W -Wall -Wno-unused-parameter -frtti -fexceptions -D$(DEF_OS) -D$(DEF_WRITER)
@@ -118,8 +119,8 @@ CFLAGS = -O3 -g -std=gnu99 -fPIC -W -Wall -Wno-unused-parameter -Wextra -Wimplic
 CXXFLAGS += -DDEBUG_TRUST_SIGNER
 CFLAGS   += -DDEBUG_TRUST_SIGNER
 
-LDFLAGS  = -lntl -lboost_program_options-mt -lboost_serialization-mt -lboost_iostreams-mt -lboost_random-mt -lboost_regex-mt -lboost_system-mt
-LDFLAGS += -L/usr/local/lib
+LDFLAGS  = -L/usr/local/lib
+LDFLAGS += -lntl -lboost_program_options-mt -lboost_serialization-mt -lboost_iostreams-mt -lboost_random-mt -lboost_regex-mt -lboost_system-mt
 
 #INC_PATHS  = -I./ed25519 -I./secp256k1 -I./secp256k1/include
 INC_PATHS  = -I./include -I./whitebox -I./bip32_bip39 -I./bip32_bip39/aes
@@ -129,14 +130,14 @@ INC_PATHS += -I/use/local/include
 all: lib test 
 
 %.o: %.c
-	$(CC) -c $(CFLAGS) $(INC_PATHS) -o $@ $<
+	$(CC) -c -arch x86_64 $(CFLAGS) $(INC_PATHS) -o $@ $<
 
 %.o: %.cpp
-	$(CXX) -c $(CXXFLAGS) $(INC_PATHS) -o $@ $<
+	$(CXX) -c -arch x86_64 $(CXXFLAGS) $(INC_PATHS) -o $@ $<
 
 lib: $(LIBRARY_OBJECT_FILE)
-	#$(AR) cru $(STATIC_LIBRARY_FILE) $(LIBRARY_OBJECT_FILE)
-	#$(RANLIB) $(STATIC_LIBRARY_FILE)
+	@#$(AR) -rc $(STATIC_LIBRARY_FILE) $(LIBRARY_OBJECT_FILE)
+	@#$(AS) -s  $(STATIC_LIBRARY_FILE)
 	$(CXX) -shared -o $(SHARED_LIBRARY_FILE) $(LIBRARY_OBJECT_FILE) $(LDFLAGS)
 
 test:
