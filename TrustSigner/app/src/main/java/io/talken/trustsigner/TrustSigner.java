@@ -38,8 +38,6 @@ public class TrustSigner {
     private native byte[] getWBRecoveryData   (String appID, String filePath, byte[] wbData, String userKey, String serverKey);
     private native byte[] setWBRecoveryData   (String appID, String filePath, String userKey, String recoveryData);
 
-    private native void test1 ();
-
     private static String getSignJava(Context context) {
         String sign = "";
         try {
@@ -203,6 +201,10 @@ public class TrustSigner {
         Arrays.fill(mWbData, (byte) 0xFF);
         Arrays.fill(mWbData, (byte) 0x55);
         Arrays.fill(mWbData, (byte) 0x00);
+    }
+
+    public String getVersion () {
+        return version;
     }
 
     public String getPublicKey (String coinSym, int hdDepth, int hdChange, int hdIndex) {
@@ -375,9 +377,5 @@ public class TrustSigner {
             sb.append(String.format("%02X", b & 0xff));
         }
         return sb.toString();
-    }
-
-    public void test(){
-        test1();
     }
 }

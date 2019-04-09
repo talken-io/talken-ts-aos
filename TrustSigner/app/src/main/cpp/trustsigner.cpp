@@ -1194,7 +1194,7 @@ char *TrustSigner_getWBRecoveryData(char *app_id, unsigned char *wb_data, char *
 #endif
 
 	char recovery_buffer[RECOVERY_BUFFER_LENGTH] = {0};
-	sprintf (recovery_buffer, "{\"iv\":\"%s\",\"v\":1,\"iter\":1,\"ks\":256,\"ts\":64,\"mode\":\"ccm\",\"adata\":\"\",\"cipher\":\"aes\",\"ct\":\"%s\"},{\"iv\":\"%s\",\"v\":1,\"iter\":1,\"ks\":256,\"ts\":64,\"mode\":\"ccm\",\"adata\":\"\",\"cipher\":\"aes\",\"ct\":\"%s\"}", base64_recovery_iv, base64_recovery, base64_userkey_iv, base64_userkey);
+	sprintf (recovery_buffer, "[{\"iv\":\"%s\",\"v\":1,\"iter\":1,\"ks\":256,\"ts\":64,\"mode\":\"ccm\",\"adata\":\"\",\"cipher\":\"aes\",\"ct\":\"%s\"},{\"iv\":\"%s\",\"v\":1,\"iter\":1,\"ks\":256,\"ts\":64,\"mode\":\"ccm\",\"adata\":\"\",\"cipher\":\"aes\",\"ct\":\"%s\"}]", base64_recovery_iv, base64_recovery, base64_userkey_iv, base64_userkey);
 #ifdef DEBUG_TRUST_SIGNER
 	LOGD("----------------------------- RECOVERY DATA --------------------------\n");
 	LOGD("(%03ld) : %s\n", strlen(recovery_buffer), recovery_buffer);
@@ -1263,7 +1263,8 @@ unsigned char *TrustSigner_setWBRecoveryData(char *app_id, char *user_key, char 
 	unsigned char base64_recovery_de[RECOVERY_BUFFER_LENGTH] = {0};
 
     int recovery_length = 0;
-	char *recovery_header = NULL;
+	char *recovery_start = NULL;
+	char *recovery_end = NULL;
 
 #if defined(__FILES__)
 	char file_name[256] = {0};
@@ -1297,9 +1298,11 @@ unsigned char *TrustSigner_setWBRecoveryData(char *app_id, char *user_key, char 
 #endif
 #endif
 
-    recovery_header = (char *) strstr (recovery_data, "\"}");
-	recovery_length = (int) (recovery_header - (recovery_data + RECOVERY_HEADER_LENGTH));
-	strncpy (base64_recovery, recovery_data + RECOVERY_HEADER_LENGTH, (size_t) recovery_length);
+    recovery_start = (char *) strstr (recovery_data, "ct\":\"");
+	recovery_start += 5;
+    recovery_end = (char *) strstr (recovery_data, "\"}");
+	recovery_length = (int) (recovery_end - recovery_start);
+	strncpy (base64_recovery, recovery_start, (size_t) recovery_length);
 #ifdef DEBUG_TRUST_SIGNER
 	LOGD("----------------------------- BASE64 ENCODE --------------------------\n");
 	LOGD("(%03ld) : %s\n", strlen(base64_recovery), base64_recovery);
@@ -1518,27 +1521,5 @@ jint JNI_OnLoad(JavaVM *vm, void *reserved) {
 #else
     return JNI_VERSION_1_4;
 #endif
-}
-
-extern "C"
-JNIEXPORT void JNICALL
-Java_io_talken_trustsigner_TrustSigner_test1(JNIEnv *env, jobject instance) {
-//    // Application object
-//    jobject application = getApplication(env);
-//    if (application == NULL) {
-//        return;
-//    }
-//    // Context(ContextWrapper) class
-//    jclass context_clz = env->GetObjectClass(application);
-//    jmethodID mid = env->GetMethodID(context_clz, "getFilesDir", "()Ljava/lang/String;");
-//    if (mid == 0) {
-//        LOGD("### MYSEO : get file path gailed.");
-//        return;
-//    } else {
-//        jobject obj;
-//        jstring result = (jstring) env->CallObjectMethod(obj, mid);
-//        char *filesDir = (char *)  env->GetStringUTFChars(result, 0);
-//        LOGD("### MYSEO : file path is %s", filesDir);
-//    }
 }
 #endif
