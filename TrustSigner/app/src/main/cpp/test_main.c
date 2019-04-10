@@ -15,7 +15,8 @@ int main (void) {
 	char *message_btc = "5a9c7c2a462741eecf49019528bf979c341c6719bd246f70d712e9f8137b482c5a9c7c2a462741eecf49019528bf979c341c6719bd246f70d712e9f8137b482c5a9c7c2a462741eecf49019528bf979c341c6719bd246f70d712e9f8137b482c5a9c7c2a462741eecf49019528bf979c341c6719bd246f70d712e9f8137b482c5a9c7c2a462741eecf49019528bf979c341c6719bd246f70d712e9f8137b482c";
 //	char *message_btc = "775b5767a4ce1a902b2464de95dc55c7b1c11e4ee701b27d59cce4ed4924d0a89340860d0484bd140834fdff014d99db0cefd0241855101bc02d73dd032941c6";
 //	char *message_btc = "471e8de7fc2e1e3237dfde94d66ee7fb948f340f0bb54d868985062ccd4d9032";
-	char *key = "1234567890123456789012345678901234567890123456789012345678901234";
+	char *user_key = "553da97a442053022ff753cdbb7246aed6f586875ccfa855008dbb3765933f8b7d5ba430ea82dcf113dcc0bb4c3b9e2432525ac043f3e37a18db693e53671cd0";
+	char *server_key = "71db7cb1bcfa049c2878f1cf0c34fd3a3b87d68e8e6c1a7a7971bdf3b00b822a5ad846cca500ced86b94b8c37a3ac879a8994005d89ef30d9ae837344c1725b0";
 	unsigned char *wb_data = NULL;
 	char *public_key = NULL;
 	unsigned char *signature = NULL;
@@ -72,18 +73,18 @@ int main (void) {
 	free (signature);
 
 #if defined(__FILES__)
-	TrustSigner_getWBRecoveryData(app_id, FILE_PATH, key, key);
+	TrustSigner_getWBRecoveryData(app_id, FILE_PATH, user_key, server_key);
 #else
-	TrustSigner_getWBRecoveryData(app_id, wb_data, key, key);
+	TrustSigner_getWBRecoveryData(app_id, wb_data, user_key, server_key);
 #endif
 
 	free (wb_data);
 	wb_data = NULL;
 
 #if defined(__FILES__)
-	wb_data = TrustSigner_setWBRecoveryData(app_id, FILE_PATH, key, recovery_data);
+	wb_data = TrustSigner_setWBRecoveryData(app_id, FILE_PATH, user_key, recovery_data);
 #else
-	wb_data = TrustSigner_setWBRecoveryData(app_id, key, recovery_data);
+	wb_data = TrustSigner_setWBRecoveryData(app_id, user_key, recovery_data);
 #endif
 
 #if defined(__FILES__)

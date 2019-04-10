@@ -55,7 +55,11 @@
 #include "whitebox.h"
 #include "base64.h"
 
+#if defined(__ANDROID__)
 #define DEBUG_TRUST_SIGNER 1
+#define __FILES__ 1
+#endif
+
 #ifdef DEBUG_TRUST_SIGNER
 char hexbuf[512];
 
@@ -73,7 +77,6 @@ char hexbuf[512];
 #define LOGE(...)	(__VA_ARGS__)
 #endif
 
-#define __FILES__ 1
 #if defined(__FILES__)
 #define PREFERENCE_WB			"trustsigner.wbd"
 #define RECOVERY_WB				"trustsigner.wbr"
@@ -1141,11 +1144,11 @@ char *TrustSigner_getWBRecoveryData(char *app_id, unsigned char *wb_data, char *
 
 #ifdef DEBUG_TRUST_SIGNER
 	LOGD("----------------------------- USER KEY -------------------------------\n");
-	hex_print (hexbuf, (unsigned char *) user_key, (size_t) user_key_len);
-	LOGD("(%03d) : %s\n", user_key_len, hexbuf);
+    LOGD("(%03ld) : %s\n", strlen(user_key), user_key);
 #endif
 
-	unsigned char org_userkey[AES256_ENCRYPT_LENGTH+RANDOM_NONCE_LENGTH] = {0};
+    int org_userkey_len = user_key_len + RANDOM_NONCE_LENGTH;
+	unsigned char org_userkey[TEMP_BUFFER_LENGTH] = {0};
 	random_buffer (nonce, RANDOM_NONCE_LENGTH);
 	memcpy (org_userkey, nonce, RANDOM_NONCE_LENGTH/2);
 	memcpy (org_userkey+RANDOM_NONCE_LENGTH/2, (unsigned char *) user_key, (size_t) user_key_len);
@@ -1154,12 +1157,12 @@ char *TrustSigner_getWBRecoveryData(char *app_id, unsigned char *wb_data, char *
 
 #ifdef DEBUG_TRUST_SIGNER
 	LOGD("----------------------------- USER KEY ENC ---------------------------\n");
-	hex_print (hexbuf, org_userkey, sizeof(org_userkey));
-	LOGD("(%03ld) : %s\n", sizeof(org_userkey), hexbuf);
+	hex_print (hexbuf, org_userkey, org_userkey_len);
+	LOGD("(%03d) : %s\n", org_userkey_len, hexbuf);
 #endif
 
 	// User Key AES Server Key Encrypt ////////////////////////////////////////////////////////////////////////////
-	enc_buf_len = encryptAES256 ((unsigned char *) server_key, server_key_len, org_userkey, sizeof(org_userkey), enc_buffer);
+	enc_buf_len = encryptAES256 ((unsigned char *) server_key, server_key_len, org_userkey, org_userkey_len, enc_buffer);
 	memzero (org_userkey, sizeof(org_userkey));
 	if (enc_buf_len <= 0) {
 		LOGE("Error! Encrypt failed!\n");
@@ -1180,17 +1183,11 @@ char *TrustSigner_getWBRecoveryData(char *app_id, unsigned char *wb_data, char *
 	hex_print (hexbuf, base64_userkey_de, (size_t) base64_buf_len);
 	LOGD("(%03d) : %s\n", base64_buf_len, hexbuf);
 
-	memset (enc_buffer, 0, sizeof(enc_buffer));
 	enc_buf_len = decryptAES256 ((unsigned char *) server_key, server_key_len, base64_userkey_de, base64_buf_len, enc_buffer);
 	LOGD("----------------------------- DEC USER KEY ---------------------------\n");
-	hex_print (hexbuf, enc_buffer, (size_t) enc_buf_len);
-	LOGD("(%03d) : %s\n", enc_buf_len, hexbuf);
-
-	char userkey[TEMP_BUFFER_LENGTH] = {0};
-	memcpy (userkey, enc_buffer+RANDOM_NONCE_LENGTH/2, (size_t) user_key_len);
-	LOGD("----------------------------- USER KEY -------------------------------\n");
-	hex_print (hexbuf, (unsigned char *) userkey, (size_t) user_key_len);
-	LOGD("(%03d) : %s\n", user_key_len, hexbuf);
+	memset (org_userkey, 0, sizeof(org_userkey));
+	memcpy (org_userkey, enc_buffer + (RANDOM_NONCE_LENGTH/2), user_key_len);
+    LOGD("(%03ld) : %s\n", strlen((char *) org_userkey), (char *) org_userkey);
 #endif
 
 	char recovery_buffer[RECOVERY_BUFFER_LENGTH] = {0};
@@ -1320,12 +1317,8 @@ unsigned char *TrustSigner_setWBRecoveryData(char *app_id, char *user_key, char 
 	memzero (base64_recovery_de, sizeof(base64_recovery_de));
 #ifdef DEBUG_TRUST_SIGNER
 	LOGD("----------------------------- AES DEC --------------------------------\n");
-#if defined(__FILES__)
-	LOGD("(%03d) : %s\n", dec_buf_len, dec_buffer);
-#else
 	hex_print (hexbuf, dec_buffer, (size_t) dec_buf_len);
 	LOGD("(%03d) : %s\n", dec_buf_len, hexbuf);
-#endif
 #endif
 
 #if defined(__FILES__)
