@@ -24,7 +24,7 @@ public class TrustSigner {
         System.loadLibrary("trustsigner");
     }
 
-    public static final String version = "0.9.6";
+    public static final String version = "0.9.7";
     private static final String PREFERENCE_WB = "trustsigner.wbd";
 
     private Context mContext;
@@ -89,56 +89,6 @@ public class TrustSigner {
         return prefs.getString(key, defValue);
     }
 
-//    private boolean putWBDataFile (Context context) {
-//        if (mWbData == null) {
-//            System.out.println("[TrustSigner] : WB Data is null.");
-//            return false;
-//        }
-//
-//        FileOutputStream fos = null;
-//        try {
-//            File pFile = new File(mWbPath + PREFERENCE_WB);
-//            fos = new FileOutputStream(pFile);
-//            fos.write(mWbData, 0, mWbData.length);
-//        } catch (IOException e) {
-//            System.out.println(e);
-//        } finally {
-//            try {
-//                fos.close();
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//        return true;
-//    }
-
-//    private boolean getWBDataFile (Context context) {
-//        File pFile = new File(mWbPath + "/" + PREFERENCE_WB);
-//        if(!pFile.exists()) {
-//            System.out.println("[TrustSigner] : WB Data file is not found.");
-//            new File(mWbPath).mkdirs();
-//            return false;
-//        }
-//
-//        int readcount = 0;
-//        FileInputStream fis = null;
-//        try {
-//            fis = new FileInputStream(pFile);
-//            readcount = (int) pFile.length();
-//            mWbData = new byte[readcount];
-//            fis.read(mWbData);
-//        } catch (IOException e) {
-//            System.out.println(e);
-//        } finally {
-//            try {
-//                fis.close();
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//        return true;
-//    }
-
     public TrustSigner (Context context, String appID) {
         mContext = context;
         mAppID = new String(appID);
@@ -176,26 +126,6 @@ public class TrustSigner {
             mWbData = hexStringToByteArray(strWbData);
         }
     }
-
-//    public void initialize () {
-//        System.out.println("### MYSEO : TIME CHECK #1");
-//        if (mWbData == null || mWbData.length <= 0) {
-//            if (getWBDataFile(mContext) == false) {
-//                System.out.println("### MYSEO : TIME CHECK #2");
-//                mWbData = getWBInitializeData(mAppID, mWbPath);
-//                if (mWbData == null || mWbData.length <= 0) {
-//                    System.out.println("[TrustSigner] : Error! WB initialize failed.");
-//                    return;
-//                }
-//                System.out.println("### MYSEO : TIME CHECK #3");
-//                if (putWBDataFile(mContext) == false) {
-//                    System.out.println("[TrustSigner] : Error! WB initialize write failed.");
-//                    return;
-//                }
-//            }
-//        }
-//        System.out.println("### MYSEO : TIME CHECK #4");
-//    }
 
     public void finalize() {
         Arrays.fill(mWbData, (byte) 0xFF);

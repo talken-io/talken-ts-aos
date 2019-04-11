@@ -329,25 +329,24 @@ static int encryptAES256 (unsigned char *key, int key_len, unsigned char *messag
 	if (aes_encrypt_key256 (enc_key, &ctx_aes) == EXIT_SUCCESS) {
 		if (aes_cbc_encrypt (message, buffer, message_len, iv, &ctx_aes) == EXIT_SUCCESS) {
 			ret = (message_len >> AES_BLOCK_SIZE_P2) * AES_BLOCK_SIZE;
+#ifdef DEBUG_TRUST_SIGNER
+			LOGD("----------------------------- AES ENC --------------------------------\n");
+			hex_print (hexbuf, buffer, (size_t) ret);
+			LOGD("(%03d) : %s\n", ret, hexbuf);
+
+			int tmp_len = 0;
+			unsigned char tmp_buffer[TEMP_BUFFER_LENGTH] = {0};
+			tmp_len = decryptAES256 (key, key_len, buffer, ret, tmp_buffer);
+			LOGD("----------------------------- AES DEC --------------------------------\n");
+			hex_print (hexbuf, tmp_buffer, (size_t) tmp_len);
+			LOGD("(%03d) : %s\n", tmp_len, hexbuf);
+#endif
 		}
 	}
 
 	memzero (enc_key, sizeof(enc_key));
 	memzero (iv, sizeof(iv));
 	memzero (&ctx_aes, sizeof(ctx_aes));
-
-#ifdef DEBUG_TRUST_SIGNER
-	LOGD("----------------------------- AES ENC --------------------------------\n");
-	hex_print (hexbuf, buffer, (size_t) ret);
-	LOGD("(%03d) : %s\n", ret, hexbuf);
-
-	int tmp_len = 0;
-	unsigned char tmp_buffer[TEMP_BUFFER_LENGTH] = {0};
-	tmp_len = decryptAES256 (key, key_len, buffer, ret, tmp_buffer);
-	LOGD("----------------------------- AES DEC --------------------------------\n");
-	hex_print (hexbuf, tmp_buffer, (size_t) tmp_len);
-	LOGD("(%03d) : %s\n", tmp_len, hexbuf);
-#endif
 
 	return ret;
 }
@@ -416,6 +415,11 @@ unsigned char *TrustSigner_getWBInitializeData(char *app_id)
 	LOGD("- appId = %s\n", app_id);
 #endif
 
+    if (app_id == NULL) {
+        LOGE("Error! Argument data is null!\n");
+        return NULL;
+    }
+
 	// WB_TABLE Create /////////////////////////////////////////////////////////////////////////////
 #if defined(__FILES__)
 	trust_signer_create_table_fp (file_name);
@@ -455,8 +459,8 @@ unsigned char *TrustSigner_getWBInitializeData(char *app_id)
 #if defined(__FILES__) // MYSEO : Recovery
 	unsigned char org_buffer_r[MNEMONIC_MAX_LENGTH] = {0}; // Fixed
 	unsigned char enc_buffer_r[MNEMONIC_MAX_LENGTH] = {0}; // Fixed
-	int org_buf_len = (int) (strlen((char *) mnemonic) / AES_BLOCK_SIZE) * AES_BLOCK_SIZE;
 
+	int org_buf_len = (int) (strlen((char *) mnemonic) / AES_BLOCK_SIZE) * AES_BLOCK_SIZE;
 	if (strlen((char *) mnemonic) % AES_BLOCK_SIZE) {
 		org_buf_len += AES_BLOCK_SIZE;
 	}
@@ -464,6 +468,7 @@ unsigned char *TrustSigner_getWBInitializeData(char *app_id)
 	char recovery_aes_key[512] = {0};
 	sprintf (recovery_aes_key, "%s|T-C-N", app_id);
 	memcpy (org_buffer_r, (unsigned char *) mnemonic, strlen((char *) mnemonic));
+
 	enc_buf_len = encryptAES256 ((unsigned char *) recovery_aes_key, (int) strlen(recovery_aes_key), org_buffer_r, org_buf_len, enc_buffer_r);
 	memzero (org_buffer_r, sizeof(org_buffer_r));
 	if (enc_buf_len <= 0) {
@@ -626,10 +631,20 @@ char *TrustSigner_getWBPublicKey(char *app_id, unsigned char *wb_data, char *coi
 	LOGD("\n[[[[[ %s ]]]]]\n", __FUNCTION__);
 #endif
 
+    if (app_id == NULL || wb_data == NULL || coin_symbol == NULL) {
+        LOGE("Error! Argument data is null!\n");
+        return NULL;
+    }
 	if (hd_depth < 3) {
 		LOGE("Error! Not support!\n");
 		return NULL;
 	}
+    coin_type = getCoinType ((char *) coin_symbol);
+    if (coin_type <= 0) {
+        LOGE("Error! Not support coin type!\n");
+        memzero (seed, sizeof(seed));
+        return NULL;
+    }
 
 	// SEED WB Decrypt /////////////////////////////////////////////////////////////////////////////
 #if defined(__FILES__)
@@ -653,6 +668,10 @@ char *TrustSigner_getWBPublicKey(char *app_id, unsigned char *wb_data, char *coi
 	enc_buf_len = trust_signer_encrypt ((char *) table_buffer, table_buf_len, wb_buffer, wb_buf_len, enc_buffer, false);
 #endif
 	memzero (wb_buffer, sizeof(wb_buffer));
+	if (enc_buf_len <= 0) {
+		LOGE("Error! Decrypt failed!\n");
+		return NULL;
+	}
 
 	// SEED AES Decrypt ////////////////////////////////////////////////////////////////////////////
 	dec_buf_len = decryptAES256 ((unsigned char *) app_id, app_id_len, enc_buffer, enc_buf_len, seed);
@@ -666,13 +685,6 @@ char *TrustSigner_getWBPublicKey(char *app_id, unsigned char *wb_data, char *coi
 	hex_print (hexbuf, seed, sizeof(seed));
 	LOGD("(%03ld) : %s\n", sizeof(seed), hexbuf);
 #endif
-
-	coin_type = getCoinType ((char *) coin_symbol);
-	if (coin_type <= 0) {
-		LOGE("Error! Not support coin type!\n");
-		memzero (seed, sizeof(seed));
-		return NULL;
-	}
 
 	// Create HD Node //////////////////////////////////////////////////////////////////////////////
 	memset (&node, 0, sizeof(node));
@@ -824,17 +836,19 @@ unsigned char *TrustSigner_getWBSignatureData(char *app_id, unsigned char *wb_da
 	LOGD("\n[[[[[ %s ]]]]]\n", __FUNCTION__);
 #endif
 
+    if (app_id == NULL || wb_data == NULL || coin_symbol == NULL) {
+        LOGE("Error! Argument data is null!\n");
+        return NULL;
+    }
 	if (hd_depth < 3) {
 		LOGE("Error! Not support!\n");
 		return NULL;
 	}
-
 	coin_type = getCoinType ((char *) coin_symbol);
 	if (coin_type <= 0) {
 		LOGE("Error! Not support coin type!\n");
 		return NULL;
 	}
-
 	if (coin_type == COIN_TYPE_BITCOIN) {
 		hash_sum = hash_len / SIGN_HASH_LENGTH;
 		if (hash_sum > SIGN_SIGNATURE_MAX) {
@@ -871,6 +885,10 @@ unsigned char *TrustSigner_getWBSignatureData(char *app_id, unsigned char *wb_da
 	enc_buf_len = trust_signer_encrypt ((char *) table_buffer, table_buf_len, wb_buffer, wb_buf_len, enc_buffer, false);
 #endif
 	memzero (wb_buffer, sizeof(wb_buffer));
+	if (enc_buf_len <= 0) {
+		LOGE("Error! Decrypt failed!\n");
+		return NULL;
+	}
 
 	// SEED AES Decrypt ////////////////////////////////////////////////////////////////////////////
 	enc_buf_len = decryptAES256 ((unsigned char *) app_id, app_id_len, enc_buffer, enc_buf_len, seed);
@@ -985,6 +1003,7 @@ unsigned char *TrustSigner_getWBSignatureData(char *app_id, unsigned char *wb_da
 	return (signature);
 }
 
+// MYSEO : userKey, serverKey is sha(256/512) hash data need
 #if defined(__ANDROID__)
 extern "C"
 JNIEXPORT jbyteArray JNICALL
@@ -1044,6 +1063,11 @@ char *TrustSigner_getWBRecoveryData(char *app_id, unsigned char *wb_data, char *
 	LOGD("\n[[[[[ %s ]]]]]\n", __FUNCTION__);
 #endif
 
+    if (app_id == NULL || user_key == NULL || server_key == NULL) {
+        LOGE("Error! Argument data is null!\n");
+        return NULL;
+    }
+
 	random_buffer (iv_random, sizeof(iv_random));
 	base64_encode_binary (base64_recovery_iv, iv_random, sizeof(iv_random));
 
@@ -1081,6 +1105,10 @@ char *TrustSigner_getWBRecoveryData(char *app_id, unsigned char *wb_data, char *
 	// SEED WB Decrypt /////////////////////////////////////////////////////////////////////////////
 	enc_buf_len = trust_signer_encrypt ((char *) table_buffer, table_buf_len, wb_buffer, wb_buf_len, enc_buffer, false);
 	memzero (wb_buffer, sizeof(wb_buffer));
+	if (enc_buf_len <= 0) {
+		LOGE("Error! Decrypt failed!\n");
+		return NULL;
+	}
 
 	// SEED AES Decrypt ////////////////////////////////////////////////////////////////////////////
 	enc_buf_len = decryptAES256 ((unsigned char *) app_id, app_id_len, enc_buffer, enc_buf_len, seed);
@@ -1276,24 +1304,10 @@ unsigned char *TrustSigner_setWBRecoveryData(char *app_id, char *user_key, char 
 	LOGD("- appId = %s\n", app_id);
 #endif
 
-	// WB_TABLE Create /////////////////////////////////////////////////////////////////////////////
-#if defined(__FILES__)
-	trust_signer_create_table_fp (file_name);
-#ifdef DEBUG_TRUST_SIGNER
-	LOGD("----------------------------- WB_TABLE -------------------------------\n");
-    LOGD("WB Table Create = %s\n", file_name);
-#endif
-#else
-	table_buf_len = trust_signer_create_table (&table_buffer);
-	if (table_buf_len <= 0) {
-		LOGE("Error! WB create failed!\n");
-		return NULL;
-	}
-#ifdef DEBUG_TRUST_SIGNER
-	LOGD("----------------------------- WB_TABLE -------------------------------\n");
-	LOGD("WB Table Create = %d\n", table_buf_len);
-#endif
-#endif
+    if (app_id == NULL || user_key == NULL || recovery_data == NULL) {
+        LOGE("Error! Argument data is null!\n");
+        return NULL;
+    }
 
     recovery_start = (char *) strstr (recovery_data, "ct\":\"");
 	recovery_start += 5;
@@ -1315,10 +1329,47 @@ unsigned char *TrustSigner_setWBRecoveryData(char *app_id, char *user_key, char 
 
 	dec_buf_len = decryptAES256 ((unsigned char *) user_key, user_key_len, base64_recovery_de, base64_buf_len, dec_buffer);
 	memzero (base64_recovery_de, sizeof(base64_recovery_de));
+	if (dec_buf_len <= 0) {
+		LOGE("Error! Decrypt failed!\n");
+		return NULL;
+	}
 #ifdef DEBUG_TRUST_SIGNER
 	LOGD("----------------------------- AES DEC --------------------------------\n");
+#if defined(__FILES__)
+	LOGD("(%03d) : %s\n", dec_buf_len, dec_buffer);
+#else
 	hex_print (hexbuf, dec_buffer, (size_t) dec_buf_len);
 	LOGD("(%03d) : %s\n", dec_buf_len, hexbuf);
+#endif
+#endif
+
+#if defined(__FILES__)
+    for (int i=0; i<(int) strlen((char *) dec_buffer); i++) {
+        if (!(dec_buffer[i] == ' ' || (dec_buffer[i] >= 'a' && dec_buffer[i] <= 'z'))) {
+			memzero (dec_buffer, sizeof(dec_buffer));
+			LOGE("Error! Decrypt failed! (%d, %c, %d)\n", i, dec_buffer[i], dec_buffer[i]);
+			return NULL;
+        }
+    }
+#endif
+
+	// WB_TABLE Create /////////////////////////////////////////////////////////////////////////////
+#if defined(__FILES__)
+	trust_signer_create_table_fp (file_name);
+#ifdef DEBUG_TRUST_SIGNER
+	LOGD("----------------------------- WB_TABLE -------------------------------\n");
+	LOGD("WB Table Create = %s\n", file_name);
+#endif
+#else
+	table_buf_len = trust_signer_create_table (&table_buffer);
+	if (table_buf_len <= 0) {
+		LOGE("Error! WB create failed!\n");
+		return NULL;
+	}
+#ifdef DEBUG_TRUST_SIGNER
+	LOGD("----------------------------- WB_TABLE -------------------------------\n");
+	LOGD("WB Table Create = %d\n", table_buf_len);
+#endif
 #endif
 
 #if defined(__FILES__)
@@ -1493,6 +1544,7 @@ static int verifySign(JNIEnv *env) {
 	env->ReleaseStringUTFChars(signature_str, sign);
 	env->DeleteLocalRef(signature_str);
 	if (result == 0) {
+        LOGE("Your are bad man!");
 		return JNI_OK;
 	}
 	return JNI_ERR;

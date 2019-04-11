@@ -144,4 +144,4 @@ test:
 	$(CC) $(CFLAGS) $(INC_PATHS) -L. -l$(PROJECT_NAME) test_main.c -o test
 
 clean:
-	@rm -rf $(LIBRARY_OBJECT_FILE) $(STATIC_LIBRARY_FILE) $(SHARED_LIBRARY_FILE) test *.dSYM
+	@rm -rf $(LIBRARY_OBJECT_FILE) $(STATIC_LIBRARY_FILE) $(SHARED_LIBRARY_FILE) test *.dSYM *.wbd *.wbr
