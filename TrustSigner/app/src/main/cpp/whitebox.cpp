@@ -12,6 +12,8 @@
  * 2019/03/27      myseo       table file save.
  ******************************************************************************/
 
+#include "string.h"
+
 #include "whitebox.h"
 
 #include "WBAES.h"
@@ -49,17 +51,15 @@ int trust_signer_create_table(char **table)
 		keyFromString[i] = (unsigned char) 0x00;
 	}
 
-	//generator.save("/tmp/myseo_aes", genAES, &coding);
 	outTable = genAES->save();
-	//cout << "### MYSEO : Table Length = " << outTable.length() << endl;
-
 	delete genAES;
 
-	//table[1275881+1] = {0};
 	int length = outTable.length();
 	phrase = (char *) malloc (length + 1);
 	memset (phrase, 0, length + 1);
 	memcpy (phrase, outTable.c_str(), length);
+
+	outTable.clear();
 
 	*table = phrase;
 
@@ -84,7 +84,6 @@ int trust_signer_encrypt(char *table, int table_length, unsigned char *input, in
 	generator.generateExtEncoding(&coding, WBAESGEN_EXTGEN_ID);
 
 	std::string inTable(table, table_length);
-	//cout << "### MYSEO : Table Length = " << inTable.length() << endl;
 
 	genAES->loadString(inTable);
 
@@ -93,16 +92,13 @@ int trust_signer_encrypt(char *table, int table_length, unsigned char *input, in
 	InputObjectBuffer<BYTE> ioob(in_length*N_BYTES);
 
 	EncTools::processData(!encrypt, genAES, &generator, &ioib, &ioob, &coding, pkcs5Padding, cbc, ivFromString, &cacc, &pacc);
+	delete genAES;
 
-	//cout << "### MYSEO : Enc Length = " << ioob.getPos() << endl;
 	int length = ioob.getPos();
 	ioob.read(output, length);
 
-	delete genAES;
-
-//	ioob.fill((unsigned char) 0xFF);
-//	ioob.fill((unsigned char) 0x55);
-//	ioob.fill((unsigned char) 0x00);
+	ioib.clear();
+	ioob.clear();
 
 	return length;
 }
@@ -137,9 +133,7 @@ int trust_signer_create_table_fp(char *filename)
 		keyFromString[i] = (unsigned char) 0x00;
 	}
 
-	//generator.save("/tmp/myseo_aes", genAES, &coding);
 	ret = genAES->save(filename);
-
 	delete genAES;
 
 	return ret;
@@ -171,45 +165,13 @@ int trust_signer_encrypt_fp(char *filename, unsigned char *input, int in_length,
 	InputObjectBuffer<BYTE> ioob(in_length*N_BYTES);
 
 	EncTools::processData(!encrypt, genAES, &generator, &ioib, &ioob, &coding, pkcs5Padding, cbc, ivFromString, &cacc, &pacc);
+	delete genAES;
 
 	int length = ioob.getPos();
 	ioob.read(output, length);
 
-	delete genAES;
-
-//	ioob.fill((unsigned char) 0xFF);
-//	ioob.fill((unsigned char) 0x55);
-//	ioob.fill((unsigned char) 0x00);
+	ioib.clear();
+	ioob.clear();
 
 	return length;
 }
-
-#ifdef TEST_WHITEBOX
-int test_main(void)
-{
-	char *table = NULL;
-	unsigned char encMessage[256] = {0};
-	unsigned char decMessage[256] = {0};
-	int table_length = 0;
-	int output_length = 0;
-	unsigned char message[] = "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890";
-
-	memset (encMessage, 0, sizeof(encMessage));
-	memset (decMessage, 0, sizeof(decMessage));
-
-	cout << "### MYSEO : message = " << message << endl;
-	table_length = trust_signer_create_table(&table);
-
-	output_length = trust_signer_encrypt(table, table_length, message, strlen((char *)message), encMessage, false);
-	cout << "### MYSEO : enc length = " << output_length << endl;
-
-	output_length = trust_signer_encrypt(table, table_length, encMessage, output_length, decMessage, true);
-	cout << "### MYSEO : dec message = " << decMessage << endl;
-
-	if (table_length > 0) {
-		free (table);
-	}
-
-	return 0;
-}
-#endif

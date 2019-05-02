@@ -30,6 +30,11 @@ public:
     void clear(){
         start = 0;
         pos = 0;
+#if 1 // MYSEO : Data Clear
+		memset(this->buffer.get(), 0xFF, size);
+		memset(this->buffer.get(), 0x55, size);
+		memset(this->buffer.get(), 0x00, size);
+#endif
     }
 
 protected:

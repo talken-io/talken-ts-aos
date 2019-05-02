@@ -348,9 +348,15 @@ bool RingBuffer<T>::setBytesWritten(ssize_t bytesWritten) {
 
 template<typename T>
 bool RingBuffer<T>::setBytesRead(ssize_t bytesRead) {
+#if 0 // MYSEO : sign -> unsign
     if (_count < bytesRead){
         return false;
     }
+#else
+    if ((ssize_t)_count < bytesRead){
+        return false;
+    }
+#endif
 
     _use    = (_use + bytesRead) % _buffSize; // Should never need to modulo.
     _count -= bytesRead;

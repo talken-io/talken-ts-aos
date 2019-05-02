@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-#if defined(__FILES__)
+#if defined(__FILES__) // iOS only this function
 unsigned char *TrustSigner_getWBInitializeData(char *app_id, char *file_path);
 char *TrustSigner_getWBPublicKey(char *app_id, char *file_path, unsigned char *wb_data, char *coin_symbol, int hd_depth, int hd_change, int hd_index);
 unsigned char *TrustSigner_getWBSignatureData(char *app_id, char *file_path, unsigned char *wb_data, char *coin_symbol, int hd_depth, int hd_change, int hd_index, unsigned char *hash_message, int hash_len);

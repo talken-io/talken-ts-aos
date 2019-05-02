@@ -21,7 +21,9 @@
  * 2019/03/22      myseo       BTC signature OK.
  * 2019/03/27      myseo       white-box crypto table to save a internal file.
  * 2019/04/02      myseo       Android recovery get/set modify.
- * 2019/04/07      myseo       Set recovery bug fixed.
+ * 2019/04/08      myseo       Set recovery bug fixed.
+ * 2019/04/18      myseo       iOS code modify.
+ * 2019/04/29      myseo       iOS char data return code modify.
  ******************************************************************************/
 
 #if defined(__ANDROID__)
@@ -58,6 +60,7 @@
 #if defined(__ANDROID__)
 #define DEBUG_TRUST_SIGNER 1
 #define __FILES__ 1
+#define __WHITEBOX__ 1
 #endif
 
 #ifdef DEBUG_TRUST_SIGNER
@@ -226,10 +229,13 @@ static int readRecovery (unsigned char *buffer, char *file_path) {
 		return -1;
 	}
 	unlink (rfile_name);
-
+#if defined(__WHITEBOX__)
 	wb_buf_len = trust_signer_encrypt_fp (file_name, wb_buffer, wb_buf_len, buffer, false);
 	memzero (wb_buffer, sizeof(wb_buffer));
-
+#else
+    memcpy (buffer, wb_buffer, wb_buf_len);
+#endif
+    
 	return wb_buf_len;
 }
 
@@ -242,7 +248,12 @@ static int writeRecovery (unsigned char *buffer, int buffer_len, char *file_path
 	char rfile_name[256] = {0};
 	sprintf (rfile_name, "%s/%s", file_path, RECOVERY_WB);
 
+#if defined(__WHITEBOX__)
 	wb_buf_len = trust_signer_encrypt_fp (file_name, buffer, buffer_len, wb_buffer, true);
+#else
+    wb_buf_len = buffer_len;
+    memcpy (wb_buffer, buffer, buffer_len);
+#endif
 
 	unlink (rfile_name);
 	if (writeWBData (rfile_name, wb_buffer, wb_buf_len) <= 0) {
@@ -370,10 +381,8 @@ Java_io_talken_trustsigner_TrustSigner_getWBInitializeData(JNIEnv *env, jobject 
 		jstring appID_, jstring filePath_)
 #else
 #if defined(__FILES__)
-extern "C"
 unsigned char *TrustSigner_getWBInitializeData(char *app_id, char *file_path)
 #else
-extern "C"
 unsigned char *TrustSigner_getWBInitializeData(char *app_id)
 #endif
 #endif
@@ -386,7 +395,7 @@ unsigned char *TrustSigner_getWBInitializeData(char *app_id)
     const int  app_id_len   = env->GetStringUTFLength (appID_);
 #else
 	unsigned char *wb_data = NULL;
-	int app_id_len = strlen (app_id);
+	int app_id_len = (int) strlen (app_id);
 #endif
 
 	unsigned char seed[BIP39_KEY_STRENGTH/4] = {0};
@@ -413,6 +422,9 @@ unsigned char *TrustSigner_getWBInitializeData(char *app_id)
 #ifdef DEBUG_TRUST_SIGNER
 	LOGD("\n[[[[[ %s ]]]]]\n", __FUNCTION__);
 	LOGD("- appId = %s\n", app_id);
+#if defined(__FILES__)
+	LOGD("- filePath = %s\n", file_path);
+#endif
 #endif
 
     if (app_id == NULL) {
@@ -420,6 +432,7 @@ unsigned char *TrustSigner_getWBInitializeData(char *app_id)
         return NULL;
     }
 
+#if defined(__WHITEBOX__)
 	// WB_TABLE Create /////////////////////////////////////////////////////////////////////////////
 #if defined(__FILES__)
 	trust_signer_create_table_fp (file_name);
@@ -436,6 +449,7 @@ unsigned char *TrustSigner_getWBInitializeData(char *app_id)
 #ifdef DEBUG_TRUST_SIGNER
 	LOGD("----------------------------- WB_TABLE -------------------------------\n");
 	LOGD("WB Table Create = %d\n", table_buf_len);
+#endif
 #endif
 #endif
 
@@ -517,6 +531,7 @@ unsigned char *TrustSigner_getWBInitializeData(char *app_id)
 		return NULL;
 	}
 
+#if defined(__WHITEBOX__)
 	// SEED WB Encrypt /////////////////////////////////////////////////////////////////////////////
 #if defined(__FILES__)
 	wb_buf_len = trust_signer_encrypt_fp (file_name, enc_buffer, enc_buf_len, wb_buffer, true);
@@ -542,21 +557,16 @@ unsigned char *TrustSigner_getWBInitializeData(char *app_id)
 	hex_print (hexbuf, dec_buffer, (size_t) dec_buf_len);
 	LOGD("(%03d) : %s\n", dec_buf_len, hexbuf);
 #endif
+#else
+    wb_buf_len = enc_buf_len;
+    memcpy (wb_buffer, enc_buffer, enc_buf_len);
+#endif
 
 	// DATA Return /////////////////////////////////////////////////////////////////////////////////
 #if defined(__ANDROID__)
-#if defined(__FILES__)
 	wb_data = env->NewByteArray (wb_buf_len + sizeof(wb_buf_len));
 	env->SetByteArrayRegion (wb_data, 0, sizeof(wb_buf_len), (jbyte *) &wb_buf_len);
 	env->SetByteArrayRegion (wb_data, sizeof(wb_buf_len), wb_buf_len, (jbyte *) wb_buffer);
-#else
-    int wb_data_len = sizeof(wb_data_len) + sizeof(table_buf_len) + table_buf_len + wb_buf_len;
-    wb_data = env->NewByteArray (wb_data_len);
-    env->SetByteArrayRegion (wb_data, 0, sizeof(wb_data_len), (jbyte *) &wb_data_len);
-    env->SetByteArrayRegion (wb_data, sizeof(wb_data_len), sizeof(table_buf_len), (jbyte *) &table_buf_len);
-    env->SetByteArrayRegion (wb_data, sizeof(wb_data_len) + sizeof(table_buf_len), table_buf_len, (jbyte *) table_buffer);
-    env->SetByteArrayRegion (wb_data, sizeof(wb_data_len) + sizeof(table_buf_len) + table_buf_len, wb_buf_len, (jbyte *) wb_buffer);
-#endif
 #else
 #if defined(__FILES__)
 	wb_data = (unsigned char *) malloc ((size_t) (wb_buf_len + sizeof(wb_buf_len)));
@@ -589,10 +599,8 @@ Java_io_talken_trustsigner_TrustSigner_getWBPublicKey(JNIEnv *env, jobject insta
         jint hdDepth, jint hdChange, jint hdIndex)
 #else
 #if defined(__FILES__)
-extern "C"
 char *TrustSigner_getWBPublicKey(char *app_id, char *file_path, unsigned char *wb_data, char *coin_symbol, int hd_depth, int hd_change, int hd_index)
 #else
-extern "C"
 char *TrustSigner_getWBPublicKey(char *app_id, unsigned char *wb_data, char *coin_symbol, int hd_depth, int hd_change, int hd_index)
 #endif
 #endif
@@ -616,6 +624,7 @@ char *TrustSigner_getWBPublicKey(char *app_id, unsigned char *wb_data, char *coi
 	HDNode node;
 	int coin_type = 0;
 	unsigned char seed[BIP39_KEY_STRENGTH/4] = {0};
+    int public_key_len = 0;
 	char public_key[BIP32_KEY_LENGTH*2] = {0};
 
 	int wb_buf_len = 0;
@@ -641,18 +650,19 @@ char *TrustSigner_getWBPublicKey(char *app_id, unsigned char *wb_data, char *coi
 	}
     coin_type = getCoinType ((char *) coin_symbol);
     if (coin_type <= 0) {
-        LOGE("Error! Not support coin type!\n");
+        LOGE("Error! Not support coin type! (%s)\n", coin_symbol);
         memzero (seed, sizeof(seed));
         return NULL;
     }
 
+#if defined(__WHITEBOX__)
 	// SEED WB Decrypt /////////////////////////////////////////////////////////////////////////////
 #if defined(__FILES__)
 	char file_name[256] = {0};
 	sprintf (file_name, "%s/%s", file_path, PREFERENCE_WB);
 
 	memcpy (&wb_buf_len, wb_data, sizeof(wb_buf_len));
-	memcpy (wb_buffer, wb_data + sizeof(wb_buf_len), (size_t) wb_buf_len);;
+	memcpy (wb_buffer, wb_data + sizeof(wb_buf_len), (size_t) wb_buf_len);
 
 	enc_buf_len = trust_signer_encrypt_fp (file_name, wb_buffer, wb_buf_len, enc_buffer, false);
 #else
@@ -672,6 +682,10 @@ char *TrustSigner_getWBPublicKey(char *app_id, unsigned char *wb_data, char *coi
 		LOGE("Error! Decrypt failed!\n");
 		return NULL;
 	}
+#else
+    memcpy (&enc_buf_len, wb_data, sizeof(enc_buf_len));
+    memcpy (enc_buffer, wb_data + sizeof(enc_buf_len), (size_t) enc_buf_len);
+#endif
 
 	// SEED AES Decrypt ////////////////////////////////////////////////////////////////////////////
 	dec_buf_len = decryptAES256 ((unsigned char *) app_id, app_id_len, enc_buffer, enc_buf_len, seed);
@@ -727,18 +741,18 @@ char *TrustSigner_getWBPublicKey(char *app_id, unsigned char *wb_data, char *coi
 	// check site : https://iancoleman.io/bip39/#english
 	switch (coin_type) {
 		case COIN_TYPE_BITCOIN: {
-			hdnode_serialize_public (&node, finger_print, VERSION_PUBLIC, public_key, sizeof(public_key));
+			public_key_len = hdnode_serialize_public (&node, finger_print, VERSION_PUBLIC, public_key, sizeof(public_key));
 #ifdef DEBUG_TRUST_SIGNER
 			LOGD("----------------------------- BTC PUBLIC -----------------------------\n");
-			LOGD("(%03ld) : %s\n", strlen(public_key), public_key);
+			LOGD("(%03d) : %s\n", public_key_len, public_key);
 #endif
 			break;
 		}
 		case COIN_TYPE_ETHEREUM: {
-			 hdnode_serialize_public (&node, finger_print, VERSION_PUBLIC, public_key, sizeof(public_key));
+			 public_key_len = hdnode_serialize_public (&node, finger_print, VERSION_PUBLIC, public_key, sizeof(public_key));
 #ifdef DEBUG_TRUST_SIGNER
 			 LOGD("----------------------------- ETH PUBLIC -----------------------------\n");
-			 LOGD("(%03ld) : %s\n", strlen(public_key), public_key);
+			 LOGD("(%03d) : %s\n", public_key_len, public_key);
 #endif
 			 break;
 		}
@@ -754,16 +768,16 @@ char *TrustSigner_getWBPublicKey(char *app_id, unsigned char *wb_data, char *coi
 			 ethereum_address_checksum (address, public_key + 2, false, chain_id);
 #ifdef DEBUG_TRUST_SIGNER
 			 LOGD("----------------------------- ETH PUBLIC -----------------------------\n");
-			 LOGD("(%03ld) : %s\n", strlen(public_key), public_key);
+			 LOGD("(%03d) : %s\n", strlen(public_key), public_key);
 #endif
 			 break;
 		}
 #endif
 		case COIN_TYPE_STELLAR: {
-			stellar_publicAddressAsStr (node.public_key + 1, public_key, sizeof(public_key));
+			public_key_len = (int) stellar_publicAddressAsStr (node.public_key + 1, public_key, sizeof(public_key));
 #ifdef DEBUG_TRUST_SIGNER
 			LOGD("----------------------------- XLM PUBLIC -----------------------------\n");
-			LOGD("(%03ld) : %s\n", strlen(public_key), public_key);
+			LOGD("(%03d) : %s\n", public_key_len, public_key);
 #endif
 			break;
 		}
@@ -773,10 +787,11 @@ char *TrustSigner_getWBPublicKey(char *app_id, unsigned char *wb_data, char *coi
 	memzero (&node, sizeof(node));
 
 #if defined(__ANDROID__)
-	public_address = char2JbyteArry (env, public_key, (int) strlen (public_key));
+	public_address = char2JbyteArry (env, public_key, (int) public_key_len);
 #else
-	public_address = (char *) malloc ((size_t) strlen (public_key));
-	memcpy (public_address, public_key, strlen (public_key));
+	public_address = (char *) malloc ((size_t) public_key_len + 1);
+    memset (public_address, 0, public_key_len + 1);
+	memcpy (public_address, public_key, public_key_len);
 #endif
 
 	return (public_address);
@@ -846,7 +861,7 @@ unsigned char *TrustSigner_getWBSignatureData(char *app_id, unsigned char *wb_da
 	}
 	coin_type = getCoinType ((char *) coin_symbol);
 	if (coin_type <= 0) {
-		LOGE("Error! Not support coin type!\n");
+		LOGE("Error! Not support coin type! (%s)\n", coin_symbol);
 		return NULL;
 	}
 	if (coin_type == COIN_TYPE_BITCOIN) {
@@ -863,6 +878,7 @@ unsigned char *TrustSigner_getWBSignatureData(char *app_id, unsigned char *wb_da
 		}
 	}
 
+#if defined(__WHITEBOX__)
 	// SEED WB Decrypt /////////////////////////////////////////////////////////////////////////////
 #if defined(__FILES__)
 	char file_name[256] = {0};
@@ -889,6 +905,10 @@ unsigned char *TrustSigner_getWBSignatureData(char *app_id, unsigned char *wb_da
 		LOGE("Error! Decrypt failed!\n");
 		return NULL;
 	}
+#else
+    memcpy (&enc_buf_len, wb_data, sizeof(enc_buf_len));
+    memcpy (enc_buffer, wb_data + sizeof(enc_buf_len), (size_t) enc_buf_len);
+#endif
 
 	// SEED AES Decrypt ////////////////////////////////////////////////////////////////////////////
 	enc_buf_len = decryptAES256 ((unsigned char *) app_id, app_id_len, enc_buffer, enc_buf_len, seed);
@@ -996,14 +1016,20 @@ unsigned char *TrustSigner_getWBSignatureData(char *app_id, unsigned char *wb_da
 #if defined(__ANDROID__)
 	signature = uchar2JbyteArry (env, sign_message, sign_len);
 #else
+#if defined(__FILES__)
+	signature = (unsigned char *) malloc ((size_t) (sign_len + sizeof(sign_len)));
+	memcpy (signature, &sign_len, sizeof(sign_len));
+	memcpy (signature + sizeof(sign_len), sign_message, sign_len);
+#else
 	signature = (unsigned char *) malloc (sign_len);
 	memcpy (signature, sign_message, sign_len);
+#endif
 #endif
 
 	return (signature);
 }
 
-// MYSEO : userKey, serverKey is sha(256/512) hash data need
+// MYSEO : userKey, serverKey is sha(512) hash data need
 #if defined(__ANDROID__)
 extern "C"
 JNIEXPORT jbyteArray JNICALL
@@ -1011,10 +1037,8 @@ Java_io_talken_trustsigner_TrustSigner_getWBRecoveryData(JNIEnv *env, jobject in
 		jstring appID_, jstring filePath_, jbyteArray wbData_, jstring userKey_, jstring serverKey_)
 #else
 #if defined(__FILES__)
-extern "C"
 char *TrustSigner_getWBRecoveryData(char *app_id, char *file_path, char *user_key, char *server_key)
 #else
-extern "C"
 char *TrustSigner_getWBRecoveryData(char *app_id, unsigned char *wb_data, char *user_key, char *server_key)
 #endif
 #endif
@@ -1148,7 +1172,7 @@ char *TrustSigner_getWBRecoveryData(char *app_id, unsigned char *wb_data, char *
 	memzero (org_recovery, sizeof(org_recovery));
 #endif
 	if (enc_buf_len <= 0) {
-		LOGE("Error! Encrypt failed!\n");
+		LOGE("Error! Encrypt failed! 1\n");
 		return NULL;
 	}
 
@@ -1190,10 +1214,17 @@ char *TrustSigner_getWBRecoveryData(char *app_id, unsigned char *wb_data, char *
 #endif
 
 	// User Key AES Server Key Encrypt ////////////////////////////////////////////////////////////////////////////
-	enc_buf_len = encryptAES256 ((unsigned char *) server_key, server_key_len, org_userkey, org_userkey_len, enc_buffer);
+    unsigned char key_buffer[TEMP_BUFFER_LENGTH] = {0};
+    int key_buf_len = (int) (org_userkey_len / AES_BLOCK_SIZE) * AES_BLOCK_SIZE;
+    if (org_userkey_len % AES_BLOCK_SIZE) {
+        key_buf_len += AES_BLOCK_SIZE;
+    }
+    memcpy (key_buffer, org_userkey, org_userkey_len);
+    
+	enc_buf_len = encryptAES256 ((unsigned char *) server_key, server_key_len, key_buffer, key_buf_len, enc_buffer);
 	memzero (org_userkey, sizeof(org_userkey));
 	if (enc_buf_len <= 0) {
-		LOGE("Error! Encrypt failed!\n");
+		LOGE("Error! Encrypt failed! 2\n");
 		return NULL;
 	}
 
@@ -1234,7 +1265,8 @@ char *TrustSigner_getWBRecoveryData(char *app_id, unsigned char *wb_data, char *
 #if defined(__ANDROID__)
 	recovery_data = char2JbyteArry (env, recovery_buffer, (int) strlen (recovery_buffer));
 #else
-	recovery_data = (char *) malloc ((size_t) strlen (recovery_buffer));
+	recovery_data = (char *) malloc ((size_t) strlen (recovery_buffer) + 1);
+    memset (recovery_data, 0, strlen (recovery_buffer) + 1);
 	memcpy (recovery_data, recovery_buffer, strlen (recovery_buffer));
 #endif
 
@@ -1250,10 +1282,8 @@ Java_io_talken_trustsigner_TrustSigner_setWBRecoveryData(JNIEnv *env, jobject in
 		jstring appID_, jstring filePath_, jstring userKey_, jstring recoveryData_)
 #else
 #if defined(__FILES__)
-extern "C"
 unsigned char *TrustSigner_setWBRecoveryData(char *app_id, char *file_path, char *user_key, char *recovery_data)
 #else
-extern "C"
 unsigned char *TrustSigner_setWBRecoveryData(char *app_id, char *user_key, char *recovery_data)
 #endif
 #endif
@@ -1302,6 +1332,9 @@ unsigned char *TrustSigner_setWBRecoveryData(char *app_id, char *user_key, char 
 #ifdef DEBUG_TRUST_SIGNER
 	LOGD("\n[[[[[ %s ]]]]]\n", __FUNCTION__);
 	LOGD("- appId = %s\n", app_id);
+#if defined(__FILES__)
+	LOGD("- filePath = %s\n", file_path);
+#endif
 #endif
 
     if (app_id == NULL || user_key == NULL || recovery_data == NULL) {
@@ -1353,6 +1386,7 @@ unsigned char *TrustSigner_setWBRecoveryData(char *app_id, char *user_key, char 
     }
 #endif
 
+#if defined(__WHITEBOX__)
 	// WB_TABLE Create /////////////////////////////////////////////////////////////////////////////
 #if defined(__FILES__)
 	trust_signer_create_table_fp (file_name);
@@ -1369,6 +1403,7 @@ unsigned char *TrustSigner_setWBRecoveryData(char *app_id, char *user_key, char 
 #ifdef DEBUG_TRUST_SIGNER
 	LOGD("----------------------------- WB_TABLE -------------------------------\n");
 	LOGD("WB Table Create = %d\n", table_buf_len);
+#endif
 #endif
 #endif
 
@@ -1392,6 +1427,7 @@ unsigned char *TrustSigner_setWBRecoveryData(char *app_id, char *user_key, char 
 		return NULL;
 	}
 
+#if defined(__WHITEBOX__)
 	// SEED WB Encrypt /////////////////////////////////////////////////////////////////////////////
 #if defined(__FILES__)
 	wb_buf_len = trust_signer_encrypt_fp (file_name, enc_buffer, enc_buf_len, wb_buffer, true);
@@ -1417,21 +1453,16 @@ unsigned char *TrustSigner_setWBRecoveryData(char *app_id, char *user_key, char 
 	hex_print (hexbuf, dec_buffer, (size_t) dec_buf_len);
 	LOGD("(%03d) : %s\n", dec_buf_len, hexbuf);
 #endif
+#else
+    wb_buf_len = enc_buf_len;
+    memcpy (wb_buffer, enc_buffer, enc_buf_len);
+#endif
 
 	// DATA Return /////////////////////////////////////////////////////////////////////////////////
 #if defined(__ANDROID__)
-#if defined(__FILES__)
 	wb_data = env->NewByteArray (wb_buf_len + sizeof(wb_buf_len));
 	env->SetByteArrayRegion (wb_data, 0, sizeof(wb_buf_len), (jbyte *) &wb_buf_len);
 	env->SetByteArrayRegion (wb_data, sizeof(wb_buf_len), wb_buf_len, (jbyte *) wb_buffer);
-#else
-    int wb_data_len = sizeof(wb_data_len) + sizeof(table_buf_len) + table_buf_len + wb_buf_len;
-    wb_data = env->NewByteArray (wb_data_len);
-    env->SetByteArrayRegion (wb_data, 0, sizeof(wb_data_len), (jbyte *) &wb_data_len);
-    env->SetByteArrayRegion (wb_data, sizeof(wb_data_len), sizeof(table_buf_len), (jbyte *) &table_buf_len);
-    env->SetByteArrayRegion (wb_data, sizeof(wb_data_len) + sizeof(table_buf_len), table_buf_len, (jbyte *) table_buffer);
-    env->SetByteArrayRegion (wb_data, sizeof(wb_data_len) + sizeof(table_buf_len) + table_buf_len, wb_buf_len, (jbyte *) wb_buffer);
-#endif
 #else
 #if defined(__FILES__)
 	wb_data = (unsigned char *) malloc ((size_t) (wb_buf_len + sizeof(wb_buf_len)));

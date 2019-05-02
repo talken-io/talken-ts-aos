@@ -229,11 +229,19 @@ int LinearAffineEq::checkInvertibleLinear(const bset & Ua,   const bset & Ub,
 
 	// Dimension check, each matrix has to have exactly 8 rows (dimension) and at least 8 columns
 	// (number of equations, sample points)
+#if 0 // MYSEO : unsigned int -> long
 	if (       Ainp.NumCols() < dim || Ainp.NumRows() != dim
 			|| Aout.NumCols() < dim || Aout.NumRows() != dim){
 		if (verbosity) cout << "Dimension mismatch for Ainp || Aout matrices " << endl;
 		return -1;
 	}
+#else
+	if (       Ainp.NumCols() < (long) dim || Ainp.NumRows() != (long) dim
+			|| Aout.NumCols() < (long) dim || Aout.NumRows() != (long) dim){
+		if (verbosity) cout << "Dimension mismatch for Ainp || Aout matrices " << endl;
+		return -1;
+	}
+#endif
 
 	if (verbosity){
 		cout << "Input matrix: " << endl;

@@ -6,8 +6,8 @@ import android.content.pm.PackageManager;
 import android.content.pm.Signature;
 
 import android.content.Context;
-import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
+//import android.content.SharedPreferences;
+//import android.preference.PreferenceManager;
 import android.text.TextUtils;
 
 import java.io.File;
@@ -24,7 +24,7 @@ public class TrustSigner {
         System.loadLibrary("trustsigner");
     }
 
-    public static final String version = "0.9.7";
+    public static final String version = "0.9.8";
     private static final String PREFERENCE_WB = "trustsigner.wbd";
 
     private Context mContext;
@@ -75,18 +75,26 @@ public class TrustSigner {
         return (context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
     }
 
+//    private void putStringSharedPreference (String key, String value) {
+//        SharedPreferences prefs =
+//                PreferenceManager.getDefaultSharedPreferences(mContext);
+//        SharedPreferences.Editor editor = prefs.edit();
+//        editor.putString(key, value);
+//        editor.commit();
+//    }
+//
+//    private String getStringSharedPreference (String key) {
+//        SharedPreferences prefs =
+//                PreferenceManager.getDefaultSharedPreferences(mContext);
+//        return prefs.getString(key, "");
+//    }
+
     private void putStringSharedPreference (String key, String value) {
-        SharedPreferences prefs =
-                PreferenceManager.getDefaultSharedPreferences(mContext);
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putString(key, value);
-        editor.commit();
+        SecureStorage.putSecurePreference(mContext, key, value);
     }
 
-    private String getStringSharedPreference (String key, String defValue) {
-        SharedPreferences prefs =
-                PreferenceManager.getDefaultSharedPreferences(mContext);
-        return prefs.getString(key, defValue);
+    private String getStringSharedPreference (String key) {
+        return SecureStorage.getSecurePreference(mContext, key);
     }
 
     public TrustSigner (Context context, String appID) {
@@ -107,7 +115,7 @@ public class TrustSigner {
     public void initialize () {
         //저장된 WB데이터가 있는지 체크
         System.out.println("### MYSEO : TIME CHECK #1 - START");
-        String strWbData = getStringSharedPreference(PREFERENCE_WB, "");
+        String strWbData = getStringSharedPreference(PREFERENCE_WB);
 
         System.out.println("### MYSEO : TIME CHECK #2");
         if(TextUtils.isEmpty(strWbData)) {
@@ -286,6 +294,7 @@ public class TrustSigner {
             throw new NullPointerException();
         }
 
+        SecureStorage.clearSecureStorage(mContext);
         putStringSharedPreference(PREFERENCE_WB, byteArrayToHexString(mWbData));
 
         return true;

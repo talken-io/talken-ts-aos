@@ -976,7 +976,8 @@ void WBAESGenerator::applyExternalEnc(BYTE * state, ExtEncoding * extc, bool inp
 
     W128b aesState{};
 
-	for(int idx = 0; idx < numBlocks; ++idx) {
+	// MYSEO : int casting
+	for(int idx = 0; idx < (int)numBlocks; ++idx) {
 		arr_to_W128b(state, static_cast<size_t>(idx * N_BYTES), aesState);
 		applyExternalEnc(aesState, extc, input);
 		W128b_to_arr((char *) state, static_cast<size_t>(idx * N_BYTES), aesState);

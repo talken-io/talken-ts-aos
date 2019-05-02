@@ -45,7 +45,11 @@ void EncTools::processData(bool decrypt, WBAES * wbaes, WBAESGenerator * generat
     bool eof = false;
     do {
         // read data from the file to the buffer
+#if 0 // MYSEO : unused
         streamsize bRead = buffer->write(inf, buffSize);
+#else
+        buffer->write(inf, buffSize);
+#endif
         streamsize bufferSize = buffer->getBytesAvailable();
         eof = inf->eof();
         if (!eof && !inf->isGood()) {

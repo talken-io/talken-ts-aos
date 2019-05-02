@@ -44,7 +44,7 @@ extern "C" {
 #define BIP44_VAL_PURPOSE			44
 #if 0 // MAINNET
 #define BIP44_VAL_BITCOIN			0
-#else
+#else // TESTNET
 #define BIP44_VAL_BITCOIN			1
 #endif
 #define BIP44_VAL_ETHEREUM			60

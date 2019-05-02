@@ -111,13 +111,16 @@ AR = ar
 AS = as
 RANLIB = ranlib
 
-CXXFLAGS = -O3 -g -std=c++11 -fPIC -W -Wall -Wno-unused-parameter -frtti -fexceptions -D$(DEF_OS) -D$(DEF_WRITER)
-#CFLAGS = -O3 -g -std=gnu99 -fPIC -W -Wall -Wno-unused-parameter -Wextra -Wimplicit-function-declaration -Wredundant-decls -Wstrict-prototypes -Wundef -Wshadow -Wpointer-arith -Wformat -Wreturn-type -Wsign-compare -Wmultichar -Wformat-nonliteral -Winit-self -Wuninitialized -Wformat-security -Werror -D_$(DEF_OS) -D$(DEF_WRITER)
-CFLAGS = -O3 -g -std=gnu99 -fPIC -W -Wall -Wno-unused-parameter -Wextra -Wimplicit-function-declaration -Wredundant-decls -Wstrict-prototypes -Wundef -Wshadow -Wpointer-arith -Wformat -Wreturn-type -Wsign-compare -Wmultichar -Wformat-nonliteral -Winit-self -Wuninitialized -Wformat-security -D$(DEF_OS) -D$(DEF_WRITER)
+CXXFLAGS = -O3 -g -std=c++11 -fPIC -W -Wall -Wno-unused-parameter -frtti -fexceptions
+#CFLAGS = -O3 -g -std=gnu99 -fPIC -W -Wall -Wno-unused-parameter -Wextra -Wimplicit-function-declaration -Wredundant-decls -Wstrict-prototypes -Wundef -Wshadow -Wpointer-arith -Wformat -Wreturn-type -Wsign-compare -Wmultichar -Wformat-nonliteral -Winit-self -Wuninitialized -Wformat-security -Werror
+CFLAGS = -O3 -g -std=gnu99 -fPIC -W -Wall -Wno-unused-parameter -Wextra -Wimplicit-function-declaration -Wredundant-decls -Wstrict-prototypes -Wundef -Wshadow -Wpointer-arith -Wformat -Wreturn-type -Wsign-compare -Wmultichar -Wformat-nonliteral -Winit-self -Wuninitialized -Wformat-security
 #CFLAGS += -DHAVE_CONFIG_H -DSECP256K1_BUILD -pedantic -Wnested-externs -Wno-long-long -Wno-overlength-strings -fvisibility=hidden
 
-CXXFLAGS += -DDEBUG_TRUST_SIGNER
-CFLAGS   += -DDEBUG_TRUST_SIGNER
+CXXFLAGS += -D__WHITEBOX__
+CFLAGS   += -D__WHITEBOX__
+
+CXXFLAGS += -DDEBUG_TRUST_SIGNER -D$(DEF_OS) -D$(DEF_WRITER)
+CFLAGS   += -DDEBUG_TRUST_SIGNER -D$(DEF_OS) -D$(DEF_WRITER)
 
 LDFLAGS  = -L/usr/local/lib
 LDFLAGS += -lntl -lboost_program_options-mt -lboost_serialization-mt -lboost_iostreams-mt -lboost_random-mt -lboost_regex-mt -lboost_system-mt

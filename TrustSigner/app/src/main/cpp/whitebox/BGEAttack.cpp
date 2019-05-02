@@ -983,7 +983,9 @@ int BGEAttack::attack(void) {
 	GenericAES defAES;
 	defAES.init(0x11B, 0x03);
 
+#if 0 // MYSEO : not used
 	bool encrypt = true;
+#endif
 	WBAESGenerator generator;
 	W128b state;
 
@@ -1208,8 +1210,10 @@ int BGEAttack::attack(void) {
 			// state[0,7,10,13]; next 4 T2 boxes will be feeded by state[4,1,14,11]
 			// The point is that nextTbox \ocirc shiftRows (during evaluation) = identity
 			AES_TB_TYPE2 & curT2     = this->wbaes->eTab2[(r+1)][nextTbox[i]];    // T2 table in next round connected to particular HILO(xtb1, xtb2)
+#ifdef AES_BGE_ATTACK // MYSEO : unused
 			XTB & curXtb1            = this->wbaes->eXTab[r][i%4][5][2*(i/4)+0];  // 3.rd index - XOR table number 5, last in round
 			XTB & curXtb2            = this->wbaes->eXTab[r][i%4][5][2*(i/4)+1];
+#endif
 #ifdef AES_BGE_ATTACK
 			GF256_func_t & outBiject = this->wbaes->eOutputBijection[r][i];
 #endif
