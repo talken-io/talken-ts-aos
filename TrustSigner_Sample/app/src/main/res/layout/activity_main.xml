@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity"
+    android:orientation="vertical">
+
+    <Button
+        android:id="@+id/btn_get_initialize_data"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="initialize_data" />
+    <Button
+        android:id="@+id/btn_get_signature_data"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="get_signature_data" />
+    <Button
+        android:id="@+id/btn_get_recovery_data"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="get_recovery_data" />
+    <Button
+        android:id="@+id/btn_set_recovery_data"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="set_recovery_data" />
+</LinearLayout>
