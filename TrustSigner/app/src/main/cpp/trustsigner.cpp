@@ -742,6 +742,7 @@ char *TrustSigner_getWBPublicKey(char *app_id, unsigned char *wb_data, char *coi
 	switch (coin_type) {
 		case COIN_TYPE_BITCOIN: {
 			public_key_len = hdnode_serialize_public (&node, finger_print, VERSION_PUBLIC, public_key, sizeof(public_key));
+            public_key_len -= 1;
 #ifdef DEBUG_TRUST_SIGNER
 			LOGD("----------------------------- BTC PUBLIC -----------------------------\n");
 			LOGD("(%03d) : %s\n", public_key_len, public_key);
@@ -749,28 +750,29 @@ char *TrustSigner_getWBPublicKey(char *app_id, unsigned char *wb_data, char *coi
 			break;
 		}
 		case COIN_TYPE_ETHEREUM: {
-			 public_key_len = hdnode_serialize_public (&node, finger_print, VERSION_PUBLIC, public_key, sizeof(public_key));
+			public_key_len = hdnode_serialize_public (&node, finger_print, VERSION_PUBLIC, public_key, sizeof(public_key));
+            public_key_len -= 1;
 #ifdef DEBUG_TRUST_SIGNER
-			 LOGD("----------------------------- ETH PUBLIC -----------------------------\n");
-			 LOGD("(%03d) : %s\n", public_key_len, public_key);
+			LOGD("----------------------------- ETH PUBLIC -----------------------------\n");
+			LOGD("(%03d) : %s\n", public_key_len, public_key);
 #endif
-			 break;
+			break;
 		}
 #if 0 // ETH Address
 		{
-			 uint32_t chain_id = 3;
-			 uint8_t address[ETHEREUM_ADDRESS_LENGTH] = {0};
-			 if (!hdnode_get_ethereum_pubkeyhash(&node, address)) {
-				 LOGE("Error! Address check fail!\n");
-			 }
-			 public_key[0] = '0';
-			 public_key[1] = 'x';
-			 ethereum_address_checksum (address, public_key + 2, false, chain_id);
+			uint32_t chain_id = 3;
+			uint8_t address[ETHEREUM_ADDRESS_LENGTH] = {0};
+			if (!hdnode_get_ethereum_pubkeyhash(&node, address)) {
+				LOGE("Error! Address check fail!\n");
+			}
+			public_key[0] = '0';
+			public_key[1] = 'x';
+			ethereum_address_checksum (address, public_key + 2, false, chain_id);
 #ifdef DEBUG_TRUST_SIGNER
-			 LOGD("----------------------------- ETH PUBLIC -----------------------------\n");
-			 LOGD("(%03d) : %s\n", strlen(public_key), public_key);
+			LOGD("----------------------------- ETH PUBLIC -----------------------------\n");
+			LOGD("(%03d) : %s\n", strlen(public_key), public_key);
 #endif
-			 break;
+			break;
 		}
 #endif
 		case COIN_TYPE_STELLAR: {
