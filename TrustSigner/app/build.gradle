@@ -6,7 +6,7 @@ android {
         minSdkVersion 19
         targetSdkVersion 28
         versionCode 1
-        versionName "0.9.8"
+        versionName "1.0.0"
         archivesBaseName = "trust_signer"
         version = android.defaultConfig.versionName
         ndk {
@@ -14,15 +14,23 @@ android {
         }
         externalNativeBuild {
             cmake {
-                cppFlags "-O2 -std=c++11 -fPIC -W -Wall -frtti -fexceptions"
-                cFlags "-O2 -std=gnu99 -fPIC -W -Wall -Wextra -Wimplicit-function-declaration -Wredundant-decls -Wstrict-prototypes -Wundef -Wshadow -Wpointer-arith -Wformat -Wreturn-type -Wsign-compare -Wmultichar -Wformat-nonliteral -Winit-self -Wuninitialized -Wformat-security -Werror"
+//                cppFlags "-O3 -g -std=c++11 -fPIC -W -Wall -frtti -fexceptions"
+//                cFlags "-O3 -g -std=gnu99 -fPIC -W -Wall -Wextra -Wimplicit-function-declaration -Wredundant-decls -Wstrict-prototypes -Wundef -Wshadow -Wpointer-arith -Wformat -Wreturn-type -Wsign-compare -Wmultichar -Wformat-nonliteral -Winit-self -Wuninitialized -Wformat-security -Werror"
+                cppFlags "-O2 -DNDEBUG -std=c++11 -fPIC -W -Wall -frtti -fexceptions"
+                cFlags "-O2 -DNDEBUG -std=gnu99 -fPIC -W -Wall -Wextra -Wimplicit-function-declaration -Wredundant-decls -Wstrict-prototypes -Wundef -Wshadow -Wpointer-arith -Wformat -Wreturn-type -Wsign-compare -Wmultichar -Wformat-nonliteral -Winit-self -Wuninitialized -Wformat-security -Werror"
             }
         }
     }
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled = false
+            debuggable = false
+            jniDebuggable = false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            debuggable = true
+            jniDebuggable = true
         }
     }
     externalNativeBuild {

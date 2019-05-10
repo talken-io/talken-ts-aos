@@ -21,7 +21,7 @@ int main (void) {
 	char *public_key = NULL;
 	unsigned char *signature = NULL;
 	//char *recovery_data = "{\"iv\":\"p2gvnNR3Wh/wTZIVXxjJ/Q==\",\"v\":1,\"iter\":1,\"ks\":256,\"ts\":64,\"mode\":\"ccm\",\"adata\":\"\",\"cipher\":\"aes\",\"ct\":\"bZHz6C17q2fk7Dfd1T6POVXwp+hTq6qSd5x5SpM3RCpkQZhjf2eEDgtTsWMCzlfu23GalqgyuG8w0hoD4SXVASdL3xq51SWLbgZT3Fb2VP1Bd/shDFNJKoMKJQAxHiS+Qegps0qPRuOAUYKC1W9OlKxZGhlPp0z1Ja/bM0/8tm9iQffGT/enYchPIIn4aMh3RfEG0D1sh5xj9QEjiMYBnA==\"}";
-	char *recovery_data = "{\"iv\":\"p2gvnNR3Wh/wTZIVXxjJ/Q==\",\"v\":1,\"iter\":1,\"ks\":256,\"ts\":64,\"mode\":\"ccm\",\"adata\":\"\",\"cipher\":\"aes\",\"ct\":\"xDqFqIr/0HS2aTNR/S69flmreTGDIukhqc7SVLMTN1Ebe3vImU+uXuCg8WJVyHV7L8/sFc8JiWUl7yyZFbyymHQE7uhzB63Pobe03vaVGAolX0gpUr7vy8Ph92APKa4VjRgbNlcJYr/ax1MHFGlStuPi5/wBSWPmgxNEI6tf2sMkJxRsF4vilif+jv5/x/avkv193J5yiERjdDH03N9rsg==\"}";
+	char *recovery_data = "{\"iv\":\"p2gvnNR3Wh/wTZIVXxjJ/Q==\",\"v\":1,\"iter\":1,\"ks\":256,\"ts\":64,\"mode\":\"ccm\",\"adata\":\"\",\"cipher\":\"aes\",\"ct\":\"xDqFqIr\\/0HS2aTNR\\/S69flmreTGDIukhqc7SVLMTN1Ebe3vImU+uXuCg8WJVyHV7L8/sFc8JiWUl7yyZFbyymHQE7uhzB63Pobe03vaVGAolX0gpUr7vy8Ph92APKa4VjRgbNlcJYr/ax1MHFGlStuPi5/wBSWPmgxNEI6tf2sMkJxRsF4vilif+jv5/x/avkv193J5yiERjdDH03N9rsg==\"}";
 
 #if defined(__FILES__)
 	wb_data = TrustSigner_getWBInitializeData (app_id, FILE_PATH);
