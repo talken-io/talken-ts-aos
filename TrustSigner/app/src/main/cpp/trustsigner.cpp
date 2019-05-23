@@ -1348,7 +1348,7 @@ unsigned char *TrustSigner_setWBRecoveryData(char *app_id, char *user_key, char 
 
     recovery_start = (char *) strstr (recovery_data, "ct\":\"");
 	recovery_start += 5;
-    recovery_end = (char *) strstr (recovery_data, "\"}");
+    recovery_end = (char *) strstr (recovery_start, "\"");
 	recovery_length = (int) (recovery_end - recovery_start);
 	strncpy (base64_recovery, recovery_start, (size_t) recovery_length);
 #ifdef DEBUG_TRUST_SIGNER
