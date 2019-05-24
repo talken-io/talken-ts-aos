@@ -2,21 +2,6 @@
 
 PROJECT_NAME = trustsigner
 
-ED25519_SOURCE_FILE =  \
-	ed25519/add_scalar.c \
-	ed25519/ge.c \
-	ed25519/keypair.c \
-	ed25519/seed.c \
-	ed25519/sign.c \
-	ed25519/fe.c \
-	ed25519/key_exchange.c \
-	ed25519/sc.c \
-	ed25519/sha512.c \
-	ed25519/verify.c
-
-SECP256K1_SOURCE_FILE =  \
-	secp256k1/secp256k1.c
-
 BIP32_BIP39_SOURCE_FILE = \
 	coin.c \
 	bip32_bip39/bignum.c \
@@ -86,8 +71,6 @@ TRUSTSIGNER_SOURCE_FILE = \
 STATIC_LIBRARY_FILE = libtrustsigner.a
 SHARED_LIBRARY_FILE = libtrustsigner.so
 
-ED25519_OBJECT_FILE  = $(ED25519_SOURCE_FILE:.c=.o)
-SECP256K1_OBJECT_FILE += $(SECP256K1_SOURCE_FILE:.c=.o)
 BIP32_BIP39_OBJECT_FILE += $(BIP32_BIP39_SOURCE_FILE:.c=.o)
 WHITEBOX_OBJECT_FILE += $(WHITEBOX_SOURCE_FILE:.cpp=.o)
 TRUSTSIGNER_OBJECT_FILE += $(TRUSTSIGNER_SOURCE_FILE:.cpp=.o)
@@ -95,8 +78,6 @@ TRUSTSIGNER_OBJECT_FILE += $(TRUSTSIGNER_SOURCE_FILE:.cpp=.o)
 LIBRARY_OBJECT_FILE += $(BIP32_BIP39_OBJECT_FILE)
 LIBRARY_OBJECT_FILE += $(WHITEBOX_OBJECT_FILE)
 LIBRARY_OBJECT_FILE += $(TRUSTSIGNER_OBJECT_FILE)
-#LIBRARY_OBJECT_FILE += $(SECP256K1_OBJECT_FILE)
-#LIBRARY_OBJECT_FILE  = $(ED25519_OBJECT_FILE)
 
 #DEF_OS = __ANDROID__
 #DEF_OS = __APPLE__
@@ -112,9 +93,9 @@ AS = as
 RANLIB = ranlib
 
 CXXFLAGS = -O3 -g -std=c++11 -fPIC -W -Wall -Wno-unused-parameter -frtti -fexceptions
-#CFLAGS = -O3 -g -std=gnu99 -fPIC -W -Wall -Wno-unused-parameter -Wextra -Wimplicit-function-declaration -Wredundant-decls -Wstrict-prototypes -Wundef -Wshadow -Wpointer-arith -Wformat -Wreturn-type -Wsign-compare -Wmultichar -Wformat-nonliteral -Winit-self -Wuninitialized -Wformat-security -Werror
 CFLAGS = -O3 -g -std=gnu99 -fPIC -W -Wall -Wno-unused-parameter -Wextra -Wimplicit-function-declaration -Wredundant-decls -Wstrict-prototypes -Wundef -Wshadow -Wpointer-arith -Wformat -Wreturn-type -Wsign-compare -Wmultichar -Wformat-nonliteral -Winit-self -Wuninitialized -Wformat-security
-#CFLAGS += -DHAVE_CONFIG_H -DSECP256K1_BUILD -pedantic -Wnested-externs -Wno-long-long -Wno-overlength-strings -fvisibility=hidden
+#CXXFLAGS = -O2 -NDEBUG -std=c++11 -fPIC -W -Wall -Wno-unused-parameter -frtti -fexceptions
+#CFLAGS = -O2 -NDEBUG -std=gnu99 -fPIC -W -Wall -Wno-unused-parameter -Wextra -Wimplicit-function-declaration -Wredundant-decls -Wstrict-prototypes -Wundef -Wshadow -Wpointer-arith -Wformat -Wreturn-type -Wsign-compare -Wmultichar -Wformat-nonliteral -Winit-self -Wuninitialized -Wformat-security
 
 CXXFLAGS += -D__WHITEBOX__
 CFLAGS   += -D__WHITEBOX__
@@ -125,7 +106,6 @@ CFLAGS   += -DDEBUG_TRUST_SIGNER -D$(DEF_OS) -D$(DEF_WRITER)
 LDFLAGS  = -L/usr/local/lib
 LDFLAGS += -lntl -lboost_program_options-mt -lboost_serialization-mt -lboost_iostreams-mt -lboost_random-mt -lboost_regex-mt -lboost_system-mt
 
-#INC_PATHS  = -I./ed25519 -I./secp256k1 -I./secp256k1/include
 INC_PATHS  = -I./include -I./whitebox -I./bip32_bip39 -I./bip32_bip39/aes
 INC_PATHS += -I/use/local/include
 
@@ -139,8 +119,6 @@ all: lib test
 	$(CXX) -c -arch x86_64 $(CXXFLAGS) $(INC_PATHS) -o $@ $<
 
 lib: $(LIBRARY_OBJECT_FILE)
-	@#$(AR) -rc $(STATIC_LIBRARY_FILE) $(LIBRARY_OBJECT_FILE)
-	@#$(AS) -s  $(STATIC_LIBRARY_FILE)
 	$(CXX) -shared -o $(SHARED_LIBRARY_FILE) $(LIBRARY_OBJECT_FILE) $(LDFLAGS)
 
 test:
