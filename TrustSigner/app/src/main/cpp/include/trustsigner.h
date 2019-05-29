@@ -15,6 +15,7 @@
 #define TRUST_SINER_H
 
 #include <stdio.h>
+#include <stdbool.h>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -25,6 +26,7 @@ unsigned char *TrustSigner_getWBInitializeData(char *app_id, char *file_path);
 char *TrustSigner_getWBPublicKey(char *app_id, char *file_path, unsigned char *wb_data, char *coin_symbol, int hd_depth, int hd_change, int hd_index);
 unsigned char *TrustSigner_getWBSignatureData(char *app_id, char *file_path, unsigned char *wb_data, char *coin_symbol, int hd_depth, int hd_change, int hd_index, unsigned char *hash_message, int hash_len);
 char *TrustSigner_getWBRecoveryData(char *app_id, char *file_path, char *user_key, char *server_key);
+bool TrustSigner_finishWBRecoveryData(char *app_id, char *file_path);
 unsigned char *TrustSigner_setWBRecoveryData(char *app_id, char *file_path, char *user_key, char *recovery_data);
 #else
 unsigned char *TrustSigner_getWBInitializeData(char *app_id);
