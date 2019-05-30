@@ -51,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void getInitializeData() {
+        System.out.println("@@@ TrustSigner : InitializeData");
         mTrustSigner.initialize();
     }
 
@@ -91,6 +92,12 @@ public class MainActivity extends AppCompatActivity {
 
         recoveryData = mTrustSigner.getRecoveryData(userKey, ServerKey);
         System.out.println("@@@ TrustSigner : Recovery Data = " + recoveryData);
+
+        if (mTrustSigner.finishRecoveryData() == true) {
+            System.out.println("@@@ TrustSigner : Finish Recovery OK.");
+        } else {
+            System.out.println("@@@ TrustSigner : Finish Recovery NOK.");
+        }
     }
 
     private void setRecoveryData() {
@@ -98,6 +105,7 @@ public class MainActivity extends AppCompatActivity {
         String org_recoveryData = "{\"iv\":\"p2gvnNR3Wh/wTZIVXxjJ/Q==\",\"v\":1,\"iter\":1,\"ks\":256,\"ts\":64,\"mode\":\"ccm\",\"adata\":\"\",\"cipher\":\"aes\",\"ct\":\"xDqFqIr/0HS2aTNR/S69flmreTGDIukhqc7SVLMTN1Ebe3vImU+uXuCg8WJVyHV7L8/sFc8JiWUl7yyZFbyymHQE7uhzB63Pobe03vaVGAolX0gpUr7vy8Ph92APKa4VjRgbNlcJYr/ax1MHFGlStuPi5/wBSWPmgxNEI6tf2sMkJxRsF4vilif+jv5/x/avkv193J5yiERjdDH03N9rsg==\"}";
         String userKey = "553da97a442053022ff753cdbb7246aed6f586875ccfa855008dbb3765933f8b7d5ba430ea82dcf113dcc0bb4c3b9e2432525ac043f3e37a18db693e53671cd0";
 
+        System.out.println("@@@ TrustSigner : setRecoveryData");
         if (mTrustSigner.setRecoveryData(userKey, org_recoveryData) != true) {
             System.out.println("@@@ TrustSigner : Error! Recovery Failed.");
         }

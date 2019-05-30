@@ -1,24 +1,13 @@
 package io.talken.trustsigner;
 
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
-import android.content.pm.Signature;
-
 import android.content.Context;
 import android.text.TextUtils;
+import java.io.File;
+import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 
 //import android.content.SharedPreferences;
 //import android.preference.PreferenceManager;
-
-import java.io.File;
-
-//import java.io.FileInputStream;
-//import java.io.FileOutputStream;
-//import java.io.IOException;
-
-import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
 
 public class TrustSigner {
 
@@ -34,69 +23,28 @@ public class TrustSigner {
     private String mWbPath;
     private byte[] mWbData;
 
-    private native byte[] getWBInitializeData (String appID, String filePath);
-    private native byte[] getWBPublicKey      (String appID, String filePath, byte[] wbData, String coinSymbol, int hdDepth, int hdChange, int hdIndex);
-    private native byte[] getWBSignatureData  (String appID, String filePath, byte[] wbData, String coinSymbol, int hdDepth, int hdChange, int hdIndex, byte[] hashMessage);
-    private native byte[] getWBRecoveryData   (String appID, String filePath, byte[] wbData, String userKey, String serverKey);
-    private native byte[] setWBRecoveryData   (String appID, String filePath, String userKey, String recoveryData);
+    private native byte[]  getWBInitializeData  (String appID, String filePath);
+    private native byte[]  getWBPublicKey       (String appID, String filePath, byte[] wbData, String coinSymbol, int hdDepth, int hdChange, int hdIndex);
+    private native byte[]  getWBSignatureData   (String appID, String filePath, byte[] wbData, String coinSymbol, int hdDepth, int hdChange, int hdIndex, byte[] hashMessage);
+    private native byte[]  getWBRecoveryData    (String appID, String filePath, byte[] wbData, String userKey, String serverKey);
+    private native boolean finishWBRecoveryData (String appID, String filePath);
+    private native byte[]  setWBRecoveryData    (String appID, String filePath, String userKey, String recoveryData);
 
-    private static String getSignJava(Context context) {
-        String sign = "";
-        try {
-            PackageManager pm = context.getPackageManager();
-            PackageInfo pi = pm.getPackageInfo(context.getPackageName(), PackageManager.GET_SIGNATURES);
-            Signature[] signatures = pi.signatures;
-            Signature signature0 = signatures[0];
-            sign = signature0.toCharsString();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return sign;
-    }
+    private void putStringSharedPreference (String key, String value) {
+        SecureStorage.putSecurePreference(mContext, key, value);
 
-    private static String getSystemProperty(String name) throws Exception {
-        Class sysProp = Class.forName("android.os.SystemProperties");
-        return (String) sysProp.getMethod("get", new Class[]{String.class}).invoke(sysProp, new Object[]{name});
-    }
-
-    private static boolean checkEmulator() {
-        try {
-            boolean goldfish = getSystemProperty("ro.hardware").contains("goldfish");
-            boolean emu = getSystemProperty("ro.kernel.qemu").length() > 0;
-            boolean sdk = getSystemProperty("ro.product.model").contains("sdk");
-            if (emu || goldfish || sdk) {
-                return true;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    private static boolean checkDebuggable(Context context){
-        return (context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
-    }
-
-//    private void putStringSharedPreference (String key, String value) {
 //        SharedPreferences prefs =
 //                PreferenceManager.getDefaultSharedPreferences(mContext);
 //        SharedPreferences.Editor editor = prefs.edit();
 //        editor.putString(key, value);
 //        editor.commit();
-//    }
-//
-//    private String getStringSharedPreference (String key) {
-//        SharedPreferences prefs =
-//                PreferenceManager.getDefaultSharedPreferences(mContext);
-//        return prefs.getString(key, "");
-//    }
-
-    private void putStringSharedPreference (String key, String value) {
-        SecureStorage.putSecurePreference(mContext, key, value);
     }
 
     private String getStringSharedPreference (String key) {
         return SecureStorage.getSecurePreference(mContext, key);
+
+//        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
+//        return prefs.getString(key, "");
     }
 
     public TrustSigner (Context context, String appID) {
@@ -113,18 +61,17 @@ public class TrustSigner {
         }
 
         if (BuildConfig.DEBUG) {
-            System.out.println("[TrustSigner] : appSign = " + getSignJava(mContext));
             System.out.println("[TrustSigner] : filePath = " + mWbPath + "/" + PREFERENCE_WB);
         }
     }
 
     public void initialize () {
         //저장된 WB데이터가 있는지 체크
-        if (BuildConfig.DEBUG) {
-            System.out.println("### MYSEO : TIME CHECK - START");
-        }
         String strWbData = getStringSharedPreference(PREFERENCE_WB);
         if(TextUtils.isEmpty(strWbData)) {
+            if (BuildConfig.DEBUG) {
+                System.out.println("### MYSEO : WB Table Create!");
+            }
             //WB데이터생성
             mWbData = getWBInitializeData(mAppID, mWbPath);
             if (mWbData == null) {
@@ -133,13 +80,11 @@ public class TrustSigner {
                 }
                 throw new NullPointerException();
             }
-
             putStringSharedPreference(PREFERENCE_WB, byteArrayToHexString(mWbData));
-
-            if (BuildConfig.DEBUG) {
-                System.out.println("### MYSEO : TIME CHECK - END");
-            }
         } else {
+            if (BuildConfig.DEBUG) {
+                System.out.println("### MYSEO : WB Table Load!");
+            }
             mWbData = hexStringToByteArray(strWbData);
         }
     }
@@ -327,6 +272,17 @@ public class TrustSigner {
         }
 
         return recoveryData;
+    }
+
+    public boolean finishRecoveryData () {
+        if (TextUtils.isEmpty(mAppID) || mAppID.length() <= 0) {
+            if (BuildConfig.DEBUG) {
+                System.out.println("[TrustSigner] : App ID is empty!");
+            }
+            return false;
+        }
+
+        return finishWBRecoveryData (mAppID, mWbPath);
     }
 
     public boolean setRecoveryData (String userKey, String recoveryData) {
