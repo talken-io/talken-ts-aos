@@ -78,7 +78,7 @@ public class TrustSigner {
                 if (BuildConfig.DEBUG) {
                     System.out.println("Error! : WB Initialize failed.");
                 }
-                throw new NullPointerException();
+                return;
             }
             putStringSharedPreference(PREFERENCE_WB, byteArrayToHexString(mWbData));
         } else {
@@ -308,7 +308,7 @@ public class TrustSigner {
             if (BuildConfig.DEBUG) {
                 System.out.println("Error! : WB Initialize failed.");
             }
-            throw new NullPointerException();
+            return false;
         }
 
         putStringSharedPreference(PREFERENCE_WB, byteArrayToHexString(mWbData));

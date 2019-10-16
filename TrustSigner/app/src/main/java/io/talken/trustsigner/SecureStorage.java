@@ -3,6 +3,7 @@ package io.talken.trustsigner;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.security.KeyPairGeneratorSpec;
+import android.text.TextUtils;
 import android.util.Base64;
 
 import java.io.IOException;
@@ -66,7 +67,7 @@ public class SecureStorage {
         keyStore.load(null);
 
         KeyStore.Entry entry = keyStore.getEntry(KEY_ALIAS, null);
-        if (entry instanceof KeyStore.PrivateKeyEntry) {
+        if (entry instanceof KeyStore.PrivateKeyEntry && !TextUtils.isEmpty(cipherText)) {
             PrivateKey privateKey = ((KeyStore.PrivateKeyEntry) entry).getPrivateKey();
             byte[] bytes = cipherText.getBytes(UTF_8);
             byte[] base64encryptedBytes = Base64.decode(bytes, Base64.DEFAULT);
@@ -152,7 +153,6 @@ public class SecureStorage {
         String result = null;
         SharedPreferences sp = context.getSharedPreferences(SECURE_PREFERENCES, Context.MODE_PRIVATE);
         result = sp.getString(key, null);
-
         try {
             result = decrypt(result);
         } catch (IllegalBlockSizeException e) {
