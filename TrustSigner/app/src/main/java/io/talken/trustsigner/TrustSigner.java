@@ -32,19 +32,10 @@ public class TrustSigner {
 
     private void putStringSharedPreference (String key, String value) {
         SecureStorage.putSecurePreference(mContext, key, value);
-
-//        SharedPreferences prefs =
-//                PreferenceManager.getDefaultSharedPreferences(mContext);
-//        SharedPreferences.Editor editor = prefs.edit();
-//        editor.putString(key, value);
-//        editor.commit();
     }
 
     private String getStringSharedPreference (String key) {
         return SecureStorage.getSecurePreference(mContext, key);
-
-//        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
-//        return prefs.getString(key, "");
     }
 
     public TrustSigner (Context context, String appID) {
@@ -65,7 +56,7 @@ public class TrustSigner {
         }
     }
 
-    public void initialize () {
+    public boolean initialize () {
         //저장된 WB데이터가 있는지 체크
         String strWbData = getStringSharedPreference(PREFERENCE_WB);
         if(TextUtils.isEmpty(strWbData)) {
@@ -78,14 +69,16 @@ public class TrustSigner {
                 if (BuildConfig.DEBUG) {
                     System.out.println("Error! : WB Initialize failed.");
                 }
-                return;
+                return false;
             }
             putStringSharedPreference(PREFERENCE_WB, byteArrayToHexString(mWbData));
+            return true;
         } else {
             if (BuildConfig.DEBUG) {
                 System.out.println("### MYSEO : WB Table Load!");
             }
             mWbData = hexStringToByteArray(strWbData);
+            return true;
         }
     }
 
@@ -93,6 +86,11 @@ public class TrustSigner {
         Arrays.fill(mWbData, (byte) 0xFF);
         Arrays.fill(mWbData, (byte) 0x55);
         Arrays.fill(mWbData, (byte) 0x00);
+    }
+
+    public boolean isEmptyData() {
+        String strWbData = getStringSharedPreference(PREFERENCE_WB);
+        return TextUtils.isEmpty(strWbData);
     }
 
     public String getVersion () {
