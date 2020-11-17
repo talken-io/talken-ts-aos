@@ -2,6 +2,8 @@ package io.talken.trustsigner;
 
 import android.content.Context;
 import android.text.TextUtils;
+import android.util.Log;
+
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
@@ -23,12 +25,13 @@ public class TrustSigner {
     private String mWbPath;
     private byte[] mWbData;
 
-    private native byte[]  getWBInitializeData  (String appID, String filePath);
-    private native byte[]  getWBPublicKey       (String appID, String filePath, byte[] wbData, String coinSymbol, int hdDepth, int hdChange, int hdIndex);
-    private native byte[]  getWBSignatureData   (String appID, String filePath, byte[] wbData, String coinSymbol, int hdDepth, int hdChange, int hdIndex, byte[] hashMessage);
-    private native byte[]  getWBRecoveryData    (String appID, String filePath, byte[] wbData, String userKey, String serverKey);
-    private native boolean finishWBRecoveryData (String appID, String filePath);
-    private native byte[]  setWBRecoveryData    (String appID, String filePath, String userKey, String recoveryData);
+    private native byte[]  getWBInitializeData              (String appID, String filePath);
+    private native byte[]  getWBPublicKey                   (String appID, String filePath, byte[] wbData, String coinSymbol, int hdDepth, int hdChange, int hdIndex);
+    private native byte[]  getWBSignatureData               (String appID, String filePath, byte[] wbData, String coinSymbol, int hdDepth, int hdChange, int hdIndex, byte[] hashMessage);
+    private native byte[]  getWBRecoveryData                (String appID, String filePath, byte[] wbData, String userKey, String serverKey);
+    private native boolean finishWBRecoveryData             (String appID, String filePath);
+    private native byte[]  setWBRecoveryData                (String appID, String filePath, String userKey, String recoveryData);
+    private native boolean getWBVerify                      (String appID, String filePath, byte[] wbData, String userKey, String recoveryData);
 
     private void putStringSharedPreference (String key, String value) {
         SecureStorage.putSecurePreference(mContext, key, value);
@@ -83,9 +86,11 @@ public class TrustSigner {
     }
 
     public void finalize() {
-        Arrays.fill(mWbData, (byte) 0xFF);
-        Arrays.fill(mWbData, (byte) 0x55);
-        Arrays.fill(mWbData, (byte) 0x00);
+        if (mWbData != null) {
+            Arrays.fill(mWbData, (byte) 0xFF);
+            Arrays.fill(mWbData, (byte) 0x55);
+            Arrays.fill(mWbData, (byte) 0x00);
+        }
     }
 
     public boolean isEmptyData() {
@@ -312,6 +317,37 @@ public class TrustSigner {
         putStringSharedPreference(PREFERENCE_WB, byteArrayToHexString(mWbData));
 
         return true;
+    }
+
+    public boolean verifyRecoveryData(String userKey, String recoveryData) {
+        if (TextUtils.isEmpty(mAppID) || mAppID.length() <= 0) {
+            if (BuildConfig.DEBUG) {
+                System.out.println("[TrustSigner] : App ID is empty!");
+            }
+            return false;
+        }
+        if (mWbData == null || mWbData.length <= 0) {
+            if (BuildConfig.DEBUG) {
+                System.out.println("[TrustSigner] : WB data is empty!");
+            }
+            return false;
+        }
+        if (TextUtils.isEmpty(userKey) || userKey.length() <= 0) {
+            if (BuildConfig.DEBUG) {
+                System.out.println("[TrustSigner] : User key is empty!");
+            }
+            return false;
+        }
+        if (TextUtils.isEmpty(recoveryData) || recoveryData.length() <= 0) {
+            if (BuildConfig.DEBUG) {
+                System.out.println("[TrustSigner] : Recovery Data is empty!");
+            }
+            return false;
+        }
+
+        boolean verifyResult = getWBVerify(mAppID, mWbPath, mWbData, userKey, recoveryData);
+
+        return verifyResult;
     }
 
     public byte[] hexStringToByteArray(String strings) {

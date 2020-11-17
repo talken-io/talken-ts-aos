@@ -24,6 +24,7 @@
  * 2019/04/08      myseo       Set recovery bug fixed.
  * 2019/04/18      myseo       iOS code modify.
  * 2019/04/29      myseo       iOS char data return code modify.
+ * 2019/09/23      JUN         VerifyRecoveryData function added.
  ******************************************************************************/
 
 #if defined(__ANDROID__)
@@ -1544,5 +1545,173 @@ unsigned char *TrustSigner_setWBRecoveryData(char *app_id, char *user_key, char 
 	memzero (wb_buffer, sizeof(wb_buffer));
 
 	return (wb_data);
+}
+
+#if defined(__ANDROID__)
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_io_talken_trustsigner_TrustSigner_getWBVerify(JNIEnv *env, jobject instance,
+                                                   jstring appID_, jstring filePath_, jbyteArray wbData_, jstring userKey_,
+                                                   jstring recoveryData_)
+#else
+bool TrustSigner_getWBVerify(char *app_id, unsigned char *wb_data, char *user_key, char *recovery_data)
+#endif
+{
+#if defined(__ANDROID__)
+    const char *app_id       = env->GetStringUTFChars (appID_, NULL);
+    const char *file_path   = env->GetStringUTFChars (filePath_, NULL);
+    const char *wb_data      = jbyteArry2char (env, wbData_);
+    const char *user_key         = env->GetStringUTFChars (userKey_, NULL);
+    const char *recovery_data    = env->GetStringUTFChars (recoveryData_, NULL);
+    const int  app_id_len        = env->GetStringUTFLength (appID_);
+    const int  user_key_len      = env->GetStringUTFLength (userKey_);
+#else
+    int app_id_len = strlen (app_id);
+	int user_key_len = strlen (user_key);
+#endif
+
+    unsigned char seed_wb[BIP39_KEY_STRENGTH/4] = {0};
+    unsigned char seed_rd[BIP39_KEY_STRENGTH/4] = {0};
+
+    int wb_buf_len = 0;
+    unsigned char wb_buffer[BIP39_KEY_STRENGTH*2] = {0};
+    int dec_buf_len = 0;
+    unsigned char dec_buffer[RECOVERY_BUFFER_LENGTH] = {0};
+
+    int base64_buf_len = 0;
+    char base64_recovery[RECOVERY_BUFFER_LENGTH] = {0};
+    unsigned char base64_recovery_de[RECOVERY_BUFFER_LENGTH] = {0};
+
+    int recovery_length = 0;
+    char *recovery_start = NULL;
+    char *recovery_end = NULL;
+
+#ifdef DEBUG_TRUST_SIGNER
+    LOGD("\n[[[[[ %s ]]]]]\n", __FUNCTION__);
+#endif
+
+    if (app_id == NULL || wb_data == NULL || user_key == NULL || recovery_data == NULL) {
+        LOGE("Error! Argument data is null!\n");
+        return false;
+    }
+
+#if defined(__WHITEBOX__)
+    // SEED WB Decrypt /////////////////////////////////////////////////////////////////////////////
+#if defined(__FILES__)
+    char file_name[256] = {0};
+    sprintf (file_name, "%s/%s", file_path, PREFERENCE_WB);
+
+    memcpy (&wb_buf_len, wb_data, sizeof(wb_buf_len));
+    memcpy (wb_buffer, wb_data + sizeof(wb_buf_len), (size_t) wb_buf_len);
+
+    dec_buf_len = trust_signer_encrypt_fp (file_name, wb_buffer, wb_buf_len, dec_buffer, false);
+#else
+    int wb_data_len = 0;
+	int table_buf_len = 0;
+	unsigned char *table_buffer = (unsigned char *) (wb_data + sizeof(wb_data_len) + sizeof(table_buf_len));
+
+	memcpy (&wb_data_len, wb_data, sizeof(wb_data_len));
+	memcpy (&table_buf_len, wb_data + sizeof(wb_data_len), sizeof(table_buf_len));
+	wb_buf_len = wb_data_len - (sizeof(wb_data_len) + sizeof(table_buf_len) + table_buf_len);
+	memcpy (wb_buffer, table_buffer + table_buf_len, (size_t) wb_buf_len);
+
+	dec_buf_len = trust_signer_encrypt ((char *) table_buffer, table_buf_len, wb_buffer, wb_buf_len, dec_buffer, false);
+#endif
+    memzero (wb_buffer, sizeof(wb_buffer));
+    if (dec_buf_len <= 0) {
+        LOGE("Error! Decrypt failed!\n");
+        return false;
+    }
+#else
+    memcpy (&dec_buf_len, wb_data, sizeof(dec_buf_len));
+	memcpy (dec_buffer, wb_data + sizeof(dec_buf_len), (size_t) dec_buf_len);
+#endif
+
+    // SEED WB AES Decrypt /////////////////////////////////////////////////////////////////////////
+    dec_buf_len = decryptAES256 ((unsigned char *) app_id, app_id_len, dec_buffer, dec_buf_len, seed_wb);
+    memzero (dec_buffer, sizeof(dec_buffer));
+    if (dec_buf_len <= 0) {
+        LOGE("Error! Decrypt failed!\n");
+        return false;
+    }
+#ifdef DEBUG_TRUST_SIGNER
+    LOGD("--------------------------- WB SEED ----------------------------------\n");
+    hex_print (hexbuf, seed_wb, sizeof(seed_wb));
+    LOGD("(%03ld) : %s\n", sizeof(seed_wb), hexbuf);
+#endif
+
+    // SEED RECOVERY BASE64 Decrypt ////////////////////////////////////////////////////////////////
+    recovery_start = (char *) strstr (recovery_data, "ct\":\"");
+    recovery_start += 5;
+    recovery_end = (char *) strstr (recovery_start, "\"");
+    recovery_length = (int) (recovery_end - recovery_start);
+    strncpy (base64_recovery, recovery_start, (size_t) recovery_length);
+#ifdef DEBUG_TRUST_SIGNER
+    LOGD("----------------------- RECOVERY BASE64 DATA -------------------------\n");
+    LOGD("(%03ld) : %s\n", strlen(base64_recovery), base64_recovery);
+#endif
+    base64_buf_len = base64_decode_binary (base64_recovery_de, base64_recovery);
+    memzero (base64_recovery, sizeof(base64_recovery));
+#ifdef DEBUG_TRUST_SIGNER
+    LOGD("------------------------- RECOVERY BASE64 DECODE ---------------------\n");
+    hex_print (hexbuf, base64_recovery_de, (size_t) base64_buf_len);
+    LOGD("(%03d) : %s\n", base64_buf_len, hexbuf);
+#endif
+
+    // SEED RECOVERY AES Decrypt //////////////////////???//////////////////////////////////////////
+    dec_buf_len = decryptAES256 ((unsigned char *) user_key, user_key_len, base64_recovery_de, base64_buf_len, dec_buffer);
+    memzero (base64_recovery_de, sizeof(base64_recovery_de));
+    if (dec_buf_len <= 0) {
+        LOGE("Error! Decrypt failed!\n");
+        return false;
+    }
+#ifdef DEBUG_TRUST_SIGNER
+    LOGD("------------------------- RECOVERY AES DEC ---------------------------\n");
+#if defined(__FILES__)
+    LOGD("(%03d) : %s\n", dec_buf_len, dec_buffer);
+#else
+    hex_print (hexbuf, dec_buffer, (size_t) dec_buf_len);
+	LOGD("(%03d) : %s\n", dec_buf_len, hexbuf);
+#endif
+#endif
+
+#if defined(__FILES__)
+	for (int i=0; i<(int) strlen((char *) dec_buffer); i++) {
+        if (!(dec_buffer[i] == ' ' || (dec_buffer[i] >= 'a' && dec_buffer[i] <= 'z'))) {
+            LOGE("Error! Decrypt failed! (%d, %c, %d)\n", i, dec_buffer[i], dec_buffer[i]);
+            memzero (dec_buffer, sizeof(dec_buffer));
+            return false;
+        }
+    }
+#endif
+#if defined(__FILES__)
+    generateBip39Seeed ((char *) dec_buffer, seed_rd, NULL);
+#else
+    memcpy (seed, dec_buffer+RANDOM_NONCE_LENGTH/2, sizeof(seed));
+#endif
+    memzero (dec_buffer, sizeof(dec_buffer));
+#ifdef DEBUG_TRUST_SIGNER
+    LOGD("------------------------- RECOVERY SEED ------------------------------\n");
+    hex_print (hexbuf, seed_rd, sizeof(seed_rd));
+    LOGD("(%03ld) : %s\n", sizeof(seed_rd), hexbuf);
+#endif
+
+    if (memcmp (seed_wb, seed_rd, sizeof(seed_wb)) == 0) {
+#ifdef DEBUG_TRUST_SIGNER
+        LOGD("--------------------------- VERIFY OK --------------------------------\n");
+#endif
+        memzero (seed_wb, sizeof(seed_wb));
+        memzero (seed_rd, sizeof(seed_rd));
+
+        return true;
+    }
+
+#ifdef DEBUG_TRUST_SIGNER
+    LOGD("--------------------------- VERIFY NOK -------------------------------\n");
+#endif
+    memzero (seed_wb, sizeof(seed_wb));
+    memzero (seed_rd, sizeof(seed_rd));
+
+    return false;
 }
 
