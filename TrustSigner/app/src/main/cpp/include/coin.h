@@ -55,6 +55,9 @@ extern "C" {
 #define SIGN_SIGNATURE_MAX			32
 #define SIGN_SIGNATURE_MAX_LENGTH	((SIGN_SIGNATURE_LENGTH+1)*SIGN_SIGNATURE_MAX)
 
+#define SIGN_HASH_LENGTH_FIL		97
+#define SIGN_SIGNATURE_LENGTH_FIL	2048
+
 #define MNEMONIC_MAX_LENGTH			1024 // magic number calculated from wordlists
 
 #define RANDOM_NONCE_LENGTH			32
@@ -75,6 +78,7 @@ extern "C" {
 #define COIN_TYPE_ETHEREUM			0x1200
 #define COIN_TYPE_STELLAR			0x1300
 #define COIN_TYPE_EOS				0x1400
+#define COIN_TYPE_FILECOIN			0x1500
 
 #define COIN_TYPE_ICON				0x2100
 
