@@ -326,6 +326,29 @@ void ethereum_hash_sign(const HDNode *node, const uint8_t *hash, uint8_t *signat
 	signature[64] = 27 + v;
 }
 
+void filecoin_hash_sign(const HDNode *node, const uint8_t *message, uint8_t *signature)
+{
+	uint8_t v = 0;
+	uint8_t hash[HASHER_DIGEST_LENGTH] = {0};
+
+	Hasher hasher;
+
+	hasher_Init(&hasher, HASHER_BLAKE);
+	hasher_Update(&hasher, message, 96);
+	hasher_Final(&hasher, hash);
+
+// 여기는 고민인데... 필요없을 듯...
+//	uint8_t address[20] = {0};
+//	if (!hdnode_get_ethereum_pubkeyhash(node, address)) {
+//		printf("Error! Ethereum signing failed\n");
+//		return;
+//	}
+	if (ecdsa_sign_digest(&secp256k1, node->private_key, hash, signature, &v, ethereum_is_canonic) != 0) {
+		printf("Error! Ethereum signing failed\n");
+		return;
+	}
+	signature[64] = 27 + v;
+}
 
 /*
  * CRC16 implementation compatible with the Stellar version

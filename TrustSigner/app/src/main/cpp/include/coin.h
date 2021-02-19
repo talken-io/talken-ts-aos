@@ -55,8 +55,7 @@ extern "C" {
 #define SIGN_SIGNATURE_MAX			32
 #define SIGN_SIGNATURE_MAX_LENGTH	((SIGN_SIGNATURE_LENGTH+1)*SIGN_SIGNATURE_MAX)
 
-#define SIGN_HASH_LENGTH_FIL		97
-#define SIGN_SIGNATURE_LENGTH_FIL	2048
+#define SIGN_HASH_LENGTH_FIL		96
 
 #define MNEMONIC_MAX_LENGTH			1024 // magic number calculated from wordlists
 
@@ -112,6 +111,7 @@ void bitcoin_hash_sign(const HDNode *node, const uint8_t *hash, uint8_t *signatu
 void ethereum_message_sign(const HDNode *node, const uint8_t *message, const uint32_t message_len, uint8_t *signature, uint8_t *address);
 int ethereum_message_verify(const uint8_t *message, const uint32_t message_len, uint8_t *signature, uint8_t *address);
 void ethereum_hash_sign(const HDNode *node, const uint8_t *hash, uint8_t *signature);
+void filecoin_hash_sign(const HDNode *node, const uint8_t *hash, uint8_t *signature);
 
 size_t stellar_publicAddressAsStr(const uint8_t *bytes, char *out, size_t outlen);
 bool stellar_validateAddress(const char *str_address);

@@ -1058,8 +1058,8 @@ unsigned char *TrustSigner_getWBSignatureData(char *app_id, unsigned char *wb_da
 			break;
 		}
 		case COIN_TYPE_FILECOIN: {
-			ethereum_hash_sign(&node, (uint8_t *) hash_message, sign_message);
-			sign_len = SIGN_SIGNATURE_LENGTH_FIL;
+			filecoin_hash_sign(&node, (uint8_t *) hash_message, sign_message);
+			sign_len = SIGN_SIGNATURE_LENGTH;
 			sign_len += 1; // value v
 #ifdef DEBUG_TRUST_SIGNER
 			LOGD("----------------------------- SIGNATURE FIL --------------------------\n");
