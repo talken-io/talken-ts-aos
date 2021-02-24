@@ -9,6 +9,8 @@ android {
         versionName "1.0.5"
         archivesBaseName = "trustsigner"
         version = android.defaultConfig.versionName
+        buildConfigField 'int', 'VERSION_CODE', "2"
+        buildConfigField 'String', 'VERSION_NAME', "\"1.0.5\""
         ndk {
             abiFilters 'armeabi-v7a', 'arm64-v8a'
         }
