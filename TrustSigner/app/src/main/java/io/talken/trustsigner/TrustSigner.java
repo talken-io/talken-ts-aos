@@ -2,7 +2,6 @@ package io.talken.trustsigner;
 
 import android.content.Context;
 import android.text.TextUtils;
-import android.util.Log;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -32,6 +31,7 @@ public class TrustSigner {
     private native boolean finishWBRecoveryData             (String appID, String filePath);
     private native byte[]  setWBRecoveryData                (String appID, String filePath, String userKey, String recoveryData);
     private native boolean getWBVerify                      (String appID, String filePath, byte[] wbData, String userKey, String recoveryData);
+    private native void    getStatus                        (String appID, String filePath);
 
     private void putStringSharedPreference (String key, String value) {
         SecureStorage.putSecurePreference(mContext, key, value);
@@ -99,6 +99,10 @@ public class TrustSigner {
     }
 
     public String getVersion () {
+        if (BuildConfig.DEBUG) {
+            System.out.println("[TrustSigner] : CALL getVersion");
+            getStatus(mAppID, mWbPath);
+        }
         return version;
     }
 

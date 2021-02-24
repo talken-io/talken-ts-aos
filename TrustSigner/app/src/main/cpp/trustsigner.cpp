@@ -1715,3 +1715,17 @@ bool TrustSigner_getWBVerify(char *app_id, unsigned char *wb_data, char *user_ke
     return false;
 }
 
+#if defined(__ANDROID__)
+extern "C" JNIEXPORT void JNICALL
+Java_io_talken_trustsigner_TrustSigner_getStatus(JNIEnv *env, jobject instance,
+															  jstring appID_, jstring filePath_)
+{
+#if defined(__ANDROID__)
+	const char *app_id       = env->GetStringUTFChars (appID_, NULL);
+	const char *file_path   = env->GetStringUTFChars (filePath_, NULL);
+#endif
+	LOGD("------------------------- TRUST SIGNER STATUS ------------------------------\n");
+	LOGD("app_id : %s\n", app_id);
+	LOGD("file_path : %s\n", file_path);
+}
+#endif
