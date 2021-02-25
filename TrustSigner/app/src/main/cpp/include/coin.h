@@ -55,8 +55,6 @@ extern "C" {
 #define SIGN_SIGNATURE_MAX			32
 #define SIGN_SIGNATURE_MAX_LENGTH	((SIGN_SIGNATURE_LENGTH+1)*SIGN_SIGNATURE_MAX)
 
-#define SIGN_HASH_LENGTH_FIL		96
-
 #define MNEMONIC_MAX_LENGTH			1024 // magic number calculated from wordlists
 
 #define RANDOM_NONCE_LENGTH			32

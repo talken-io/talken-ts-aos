@@ -904,7 +904,7 @@ unsigned char *TrustSigner_getWBSignatureData(char *app_id, unsigned char *wb_da
 		}
 	} else if (coin_type == COIN_TYPE_FILECOIN) {
 		hash_sum = 1;
-		if (hash_len > SIGN_HASH_LENGTH_FIL) {
+		if (hash_len > SIGN_HASH_LENGTH) {
 			LOGE("Error! Hash length is incorrect!\n");
 			return NULL;
 		}

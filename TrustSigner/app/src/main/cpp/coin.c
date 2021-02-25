@@ -347,7 +347,8 @@ void filecoin_hash_sign(const HDNode *node, const uint8_t *message, uint8_t *sig
 		printf("Error! Ethereum signing failed\n");
 		return;
 	}
-	signature[64] = 27 + v;
+//	signature[64] = 27 + v;
+	signature[64] = v;
 }
 
 /*
