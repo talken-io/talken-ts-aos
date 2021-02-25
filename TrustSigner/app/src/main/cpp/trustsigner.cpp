@@ -1727,5 +1727,6 @@ Java_io_talken_trustsigner_TrustSigner_getStatus(JNIEnv *env, jobject instance,
 	LOGD("------------------------- TRUST SIGNER STATUS ------------------------------\n");
 	LOGD("app_id : %s\n", app_id);
 	LOGD("file_path : %s\n", file_path);
+    LOGD("end_of : %s\n", file_path);
 }
 #endif
