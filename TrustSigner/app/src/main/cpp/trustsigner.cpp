@@ -734,7 +734,7 @@ char *TrustSigner_getWBPublicKey(char *app_id, unsigned char *wb_data, char *coi
 			break;
 		case COIN_TYPE_FILECOIN:
 			bip44_path[BIP44_PATH_PURPOSE]    = BIP44_VAL_PURPOSE | BIP44_VAL_HARDENED;
-			bip44_path[BIP44_PATH_COIN_TYPE]  = BIP44_VAL_ETHEREUM | BIP44_VAL_HARDENED;
+			bip44_path[BIP44_PATH_COIN_TYPE]  = BIP44_VAL_FILECOIN | BIP44_VAL_HARDENED;
 			bip44_path[BIP44_PATH_ACCOUNT]    = 0 | BIP44_VAL_HARDENED;
 			bip44_path[BIP44_PATH_CHANGE]     = (uint32_t ) hd_change;
 			bip44_path[BIP44_PATH_ADDR_INDEX] = (uint32_t ) hd_index;
@@ -992,7 +992,7 @@ unsigned char *TrustSigner_getWBSignatureData(char *app_id, unsigned char *wb_da
 			break;
 		case COIN_TYPE_FILECOIN:
 			bip44_path[BIP44_PATH_PURPOSE]    = BIP44_VAL_PURPOSE | BIP44_VAL_HARDENED;
-			bip44_path[BIP44_PATH_COIN_TYPE]  = BIP44_VAL_ETHEREUM | BIP44_VAL_HARDENED;
+			bip44_path[BIP44_PATH_COIN_TYPE]  = BIP44_VAL_FILECOIN | BIP44_VAL_HARDENED;
 			bip44_path[BIP44_PATH_ACCOUNT]    = 0 | BIP44_VAL_HARDENED;
 			bip44_path[BIP44_PATH_CHANGE]     = (uint32_t) hd_change;
 			bip44_path[BIP44_PATH_ADDR_INDEX] = (uint32_t) hd_index;

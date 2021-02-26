@@ -326,28 +326,14 @@ void ethereum_hash_sign(const HDNode *node, const uint8_t *hash, uint8_t *signat
 	signature[64] = 27 + v;
 }
 
-void filecoin_hash_sign(const HDNode *node, const uint8_t *message, uint8_t *signature)
+void filecoin_hash_sign(const HDNode *node, const uint8_t *hash, uint8_t *signature)
 {
 	uint8_t v = 0;
-	uint8_t hash[HASHER_DIGEST_LENGTH] = {0};
-
-	Hasher hasher;
-
-	hasher_Init(&hasher, HASHER_BLAKE);
-	hasher_Update(&hasher, message, 96);
-	hasher_Final(&hasher, hash);
-
-// 여기는 고민인데... 필요없을 듯...
-//	uint8_t address[20] = {0};
-//	if (!hdnode_get_ethereum_pubkeyhash(node, address)) {
-//		printf("Error! Ethereum signing failed\n");
-//		return;
-//	}
-	if (ecdsa_sign_digest(&secp256k1, node->private_key, hash, signature, &v, ethereum_is_canonic) != 0) {
-		printf("Error! Ethereum signing failed\n");
+	if (ecdsa_sign_digest(&secp256k1, node->private_key, hash, signature, &v, NULL) != 0) {
+		printf("Error! Filecoin signing failed\n");
 		return;
 	}
-//	signature[64] = 27 + v;
+
 	signature[64] = v;
 }
 
@@ -487,7 +473,7 @@ unsigned int coin_derive_node(HDNode *node, const uint32_t *address, const size_
 	int i = 0;
 	uint32_t fingerprint = 0;
 
-#if 0
+#if 1
 	char private_key[BIP32_KEY_LENGTH*2] = {0};
 	char public_key[BIP32_KEY_LENGTH*2] = {0};
 
@@ -502,7 +488,7 @@ unsigned int coin_derive_node(HDNode *node, const uint32_t *address, const size_
 			memzero(node, sizeof(node));
 			return 0xFFFFFFFF;
 		}
-#if 0
+#if 1
 		memset (private_key, 0, sizeof(private_key));
 		hdnode_fill_public_key(node);
 		hdnode_serialize_private (node, fingerprint, VERSION_PRIVATE, private_key, 128);
@@ -514,7 +500,7 @@ unsigned int coin_derive_node(HDNode *node, const uint32_t *address, const size_
 		hdnode_fill_public_key((HDNode *)node);
 	}
 
-#if 0
+#if 1
 	hdnode_serialize_public (node, fingerprint, VERSION_PUBLIC, public_key, 128);
 	printf ("FP  : 0x%x\n", fingerprint);
 	printf ("Pub : %s\n", public_key);

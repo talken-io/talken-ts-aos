@@ -49,6 +49,7 @@ extern "C" {
 #endif
 #define BIP44_VAL_ETHEREUM			60
 #define BIP44_VAL_STELLAR			148
+#define BIP44_VAL_FILECOIN			461
 
 #define SIGN_HASH_LENGTH			32
 #define SIGN_SIGNATURE_LENGTH		64
