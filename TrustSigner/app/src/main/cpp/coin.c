@@ -42,7 +42,7 @@ const CoinInfo coins[COIN_INFOR_COUNT] = {
 	{"Bitcoin Gold", " BTG",      500000, "\x1d" "Bitcoin Gold Signed Message:\n", true, true, true,  true,  true,    38,   23, 0x0488b21e, 0x0488ade4, 79, "btg",  0x8000009c, SECP256K1_NAME, &secp256k1_info, },
 };
 
-#if 1 // DEBUG
+#if 0 // DEBUG
 #include "bip32_bip39.h"
 char hexbuf[512];
 #endif

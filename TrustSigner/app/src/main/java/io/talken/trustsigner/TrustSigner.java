@@ -177,9 +177,9 @@ public class TrustSigner {
         // as-is
         int hdDepth = 3;
         // use filecoin
-        if (coinSym.equals("FIL")) {
-            hdDepth = 5;
-        }
+//        if (coinSym.equals("FIL")) {
+//            hdDepth = 5;
+//        }
 
         byte[] pubKey = getWBPublicKey (mAppID, mWbPath, mWbData, coinSym, hdDepth, 0, 0);
         if (pubKey == null) {

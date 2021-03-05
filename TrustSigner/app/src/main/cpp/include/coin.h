@@ -10,6 +10,7 @@
  * When            Who         What, Where, Why
  * 2019/01/01      myseo       create.
  * 2019/01/31      myseo       BIP44 spec added.
+ * 2021/03/05      bongkim     define value for BIP44 filecoin
  ******************************************************************************/
 
 #ifndef TRUST_SINER_COIN_H
