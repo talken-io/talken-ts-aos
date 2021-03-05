@@ -2,7 +2,6 @@ package io.talken.trustsigner;
 
 import android.content.Context;
 import android.text.TextUtils;
-import android.util.Log;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -19,19 +18,21 @@ public class TrustSigner {
 
     public static final String version = BuildConfig.VERSION_NAME;
     private static final String PREFERENCE_WB = "trustsigner.wbd";
+    private static final String LOG_PREFIX = "[TrustSigner] : ";
 
     private Context mContext;
     private String mAppID;
     private String mWbPath;
     private byte[] mWbData;
 
-    private native byte[]  getWBInitializeData              (String appID, String filePath);
+    private native byte[]  getWBInitializeData               (String appID, String filePath);
     private native byte[]  getWBPublicKey                   (String appID, String filePath, byte[] wbData, String coinSymbol, int hdDepth, int hdChange, int hdIndex);
     private native byte[]  getWBSignatureData               (String appID, String filePath, byte[] wbData, String coinSymbol, int hdDepth, int hdChange, int hdIndex, byte[] hashMessage);
     private native byte[]  getWBRecoveryData                (String appID, String filePath, byte[] wbData, String userKey, String serverKey);
     private native boolean finishWBRecoveryData             (String appID, String filePath);
     private native byte[]  setWBRecoveryData                (String appID, String filePath, String userKey, String recoveryData);
     private native boolean getWBVerify                      (String appID, String filePath, byte[] wbData, String userKey, String recoveryData);
+    private native void    generateMnemonic                 (String appID, String filePath);
 
     private void putStringSharedPreference (String key, String value) {
         SecureStorage.putSecurePreference(mContext, key, value);
@@ -49,13 +50,13 @@ public class TrustSigner {
         File pFile = new File(mWbPath + "/" + PREFERENCE_WB);
         if(!pFile.exists()) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : WB table file is not found.");
+                System.out.println(LOG_PREFIX+ "WB table file is not found.");
             }
             new File(mWbPath).mkdirs();
         }
 
         if (BuildConfig.DEBUG) {
-            System.out.println("[TrustSigner] : filePath = " + mWbPath + "/" + PREFERENCE_WB);
+            System.out.println(LOG_PREFIX+"filePath = " + mWbPath + "/" + PREFERENCE_WB);
         }
     }
 
@@ -64,13 +65,13 @@ public class TrustSigner {
         String strWbData = getStringSharedPreference(PREFERENCE_WB);
         if(TextUtils.isEmpty(strWbData)) {
             if (BuildConfig.DEBUG) {
-                System.out.println("### MYSEO : WB Table Create!");
+                System.out.println(LOG_PREFIX+"WB Table Create!");
             }
             //WB데이터생성
             mWbData = getWBInitializeData(mAppID, mWbPath);
             if (mWbData == null) {
                 if (BuildConfig.DEBUG) {
-                    System.out.println("Error! : WB Initialize failed.");
+                    System.out.println(LOG_PREFIX+"Error! : WB Initialize failed.");
                 }
                 return false;
             }
@@ -78,7 +79,7 @@ public class TrustSigner {
             return true;
         } else {
             if (BuildConfig.DEBUG) {
-                System.out.println("### MYSEO : WB Table Load!");
+                System.out.println(LOG_PREFIX+"WB Table Load!");
             }
             mWbData = hexStringToByteArray(strWbData);
             return true;
@@ -105,37 +106,37 @@ public class TrustSigner {
     public String getPublicKey (String coinSym, int hdDepth, int hdChange, int hdIndex) {
         if (TextUtils.isEmpty(mAppID) || mAppID.length() <= 0) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : App ID is empty!");
+                System.out.println(LOG_PREFIX+"App ID is empty!");
             }
             return null;
         } else if (mWbData == null || mWbData.length <= 0) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : WB data is empty!");
+                System.out.println(LOG_PREFIX+"WB data is empty!");
             }
             return null;
         } else if (TextUtils.isEmpty(coinSym) || coinSym.length() <= 0) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : Coin symbol is empty!");
+                System.out.println(LOG_PREFIX+"Coin symbol is empty!");
             }
             return null;
         } else if (hdDepth < 3 || hdDepth > 5) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : HD depth value invaild! (3 ~ 5)");
+                System.out.println(LOG_PREFIX+"HD depth value invaild! (3 ~ 5)");
             }
             return null;
         } else if (coinSym.equals("XLM") && hdDepth != 3) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : XLM HD depth value invaild! (3)");
+                System.out.println(LOG_PREFIX+"XLM HD depth value invaild! (3)");
             }
             return null;
         } else if (hdChange < 0 || hdChange > 1) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : HD change value invaild! (0 ~ 1)");
+                System.out.println(LOG_PREFIX+"HD change value invaild! (0 ~ 1)");
             }
             return null;
         } else if (hdIndex < 0) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : HD index value invaild!");
+                System.out.println(LOG_PREFIX+"HD index value invaild!");
             }
             return null;
         }
@@ -158,22 +159,29 @@ public class TrustSigner {
     public String getAccountPublicKey (String coinSym) {
         if (TextUtils.isEmpty(mAppID) || mAppID.length() <= 0) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : App ID is empty!");
+                System.out.println(LOG_PREFIX+"App ID is empty!");
             }
             return null;
         } else if (mWbData == null || mWbData.length <= 0) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : WB data is empty!");
+                System.out.println(LOG_PREFIX+"WB data is empty!");
             }
             return null;
         } else if (TextUtils.isEmpty(coinSym) || coinSym.length() <= 0) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : Coin symbol is empty!");
+                System.out.println(LOG_PREFIX+"Coin symbol is empty!");
             }
             return null;
         }
 
-        byte[] pubKey = getWBPublicKey (mAppID, mWbPath, mWbData, coinSym, 3, 0, 0);
+        // as-is
+        int hdDepth = 3;
+        // use filecoin
+        if (coinSym.equals("FIL")) {
+            hdDepth = 5;
+        }
+
+        byte[] pubKey = getWBPublicKey (mAppID, mWbPath, mWbData, coinSym, hdDepth, 0, 0);
         if (pubKey == null) {
             return null;
         }
@@ -191,42 +199,42 @@ public class TrustSigner {
     public String getSignatureData (String coinSym, int hdDepth, int hdChange, int hdIndex, String hashMessage) {
         if (TextUtils.isEmpty(mAppID) || mAppID.length() <= 0) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : App ID is empty!");
+                System.out.println(LOG_PREFIX+"App ID is empty!");
             }
             return null;
         } else if (mWbData == null || mWbData.length <= 0) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : WB data is empty!");
+                System.out.println(LOG_PREFIX+"WB data is empty!");
             }
             return null;
         } else if (TextUtils.isEmpty(coinSym) || coinSym.length() <= 0) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : Coin symbol is empty!");
+                System.out.println(LOG_PREFIX+"Coin symbol is empty!");
             }
             return null;
         } else if (hdDepth < 3 || hdDepth > 5) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : HD depth value invaild! (3 ~ 5)");
+                System.out.println(LOG_PREFIX+"HD depth value invaild! (3 ~ 5)");
             }
             return null;
         } else if (coinSym.equals("XLM") && hdDepth != 3) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : XLM HD depth value invaild! (3)");
+                System.out.println(LOG_PREFIX+"XLM HD depth value invaild! (3)");
             }
             return null;
         } else if (hdChange < 0 || hdChange > 1) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : HD change value invaild! (0 ~ 1)");
+                System.out.println(LOG_PREFIX+"HD change value invaild! (0 ~ 1)");
             }
             return null;
         } else if (hdIndex < 0) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : HD index value invaild!");
+                System.out.println(LOG_PREFIX+"HD index value invaild!");
             }
             return null;
         } else if (TextUtils.isEmpty(hashMessage) || hashMessage.length() <= 0) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : Hash message is empty!");
+                System.out.println(LOG_PREFIX+"Hash message is empty!");
             }
             return null;
         }
@@ -242,22 +250,22 @@ public class TrustSigner {
     public String getRecoveryData (String userKey, String serverKey) {
         if (TextUtils.isEmpty(mAppID) || mAppID.length() <= 0) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : App ID is empty!");
+                System.out.println(LOG_PREFIX+"App ID is empty!");
             }
             return null;
         } else if (mWbData == null || mWbData.length <= 0) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : WB data is empty!");
+                System.out.println(LOG_PREFIX+"WB data is empty!");
             }
             return null;
         } else if (TextUtils.isEmpty(userKey) || userKey.length() <= 0) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : User key is empty!");
+                System.out.println(LOG_PREFIX+"User key is empty!");
             }
             return null;
         } else if (TextUtils.isEmpty(serverKey) || serverKey.length() <= 0) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : Server key is empty!");
+                System.out.println(LOG_PREFIX+"Server key is empty!");
             }
             return null;
         }
@@ -280,7 +288,7 @@ public class TrustSigner {
     public boolean finishRecoveryData () {
         if (TextUtils.isEmpty(mAppID) || mAppID.length() <= 0) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : App ID is empty!");
+                System.out.println(LOG_PREFIX+"App ID is empty!");
             }
             return false;
         }
@@ -291,17 +299,17 @@ public class TrustSigner {
     public boolean setRecoveryData (String userKey, String recoveryData) {
         if (TextUtils.isEmpty(mAppID) || mAppID.length() <= 0) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : App ID is empty!");
+                System.out.println(LOG_PREFIX+"App ID is empty!");
             }
             return false;
         } else if (TextUtils.isEmpty(userKey) || userKey.length() <= 0) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : userKey is empty!");
+                System.out.println(LOG_PREFIX+"userKey is empty!");
             }
             return false;
         } else if (TextUtils.isEmpty(recoveryData) || recoveryData.length() <= 0) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : Recovery Data is empty!");
+                System.out.println(LOG_PREFIX+"Recovery Data is empty!");
             }
             return false;
         }
@@ -309,7 +317,7 @@ public class TrustSigner {
         mWbData = setWBRecoveryData (mAppID, mWbPath, userKey, recoveryData);
         if (mWbData == null) {
             if (BuildConfig.DEBUG) {
-                System.out.println("Error! : WB Initialize failed.");
+                System.out.println(LOG_PREFIX+"Error! : WB Initialize failed.");
             }
             return false;
         }
@@ -322,25 +330,25 @@ public class TrustSigner {
     public boolean verifyRecoveryData(String userKey, String recoveryData) {
         if (TextUtils.isEmpty(mAppID) || mAppID.length() <= 0) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : App ID is empty!");
+                System.out.println(LOG_PREFIX+"App ID is empty!");
             }
             return false;
         }
         if (mWbData == null || mWbData.length <= 0) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : WB data is empty!");
+                System.out.println(LOG_PREFIX+"WB data is empty!");
             }
             return false;
         }
         if (TextUtils.isEmpty(userKey) || userKey.length() <= 0) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : User key is empty!");
+                System.out.println(LOG_PREFIX+"User key is empty!");
             }
             return false;
         }
         if (TextUtils.isEmpty(recoveryData) || recoveryData.length() <= 0) {
             if (BuildConfig.DEBUG) {
-                System.out.println("[TrustSigner] : Recovery Data is empty!");
+                System.out.println(LOG_PREFIX+"Recovery Data is empty!");
             }
             return false;
         }
@@ -366,5 +374,9 @@ public class TrustSigner {
             sb.append(String.format("%02X", b & 0xff));
         }
         return sb.toString();
+    }
+
+    public void getMnemonic() {
+        generateMnemonic(mAppID, mWbPath);
     }
 }

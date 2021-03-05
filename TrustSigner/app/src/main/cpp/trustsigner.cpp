@@ -71,7 +71,7 @@ char hexbuf[512];
 
 #if defined(__ANDROID__)
 #include <android/log.h>
-#define LOG_TAG		"### MYSEO "
+#define LOG_TAG		"### trustsigner.c ### "
 #define LOGD(...)	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 #define LOGE(...)	__android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 #else
@@ -383,9 +383,9 @@ static int getCoinType (char *coin) {
 
 #if defined(__ANDROID__)
 extern "C"
-JNIEXPORT jbyteArray JNICALL
-Java_io_talken_trustsigner_TrustSigner_getWBInitializeData(JNIEnv *env, jobject instance,
-		jstring appID_, jstring filePath_)
+JNIEXPORT void JNICALL
+Java_io_talken_trustsigner_TrustSigner_generateMnemonic(JNIEnv *env, jobject instance,
+                                                           jstring appID_, jstring filePath_)
 #else
 #if defined(__FILES__)
 unsigned char *TrustSigner_getWBInitializeData(char *app_id, char *file_path)
@@ -395,42 +395,117 @@ unsigned char *TrustSigner_getWBInitializeData(char *app_id)
 #endif
 {
 #if defined(__ANDROID__)
-	jbyteArray wb_data = NULL;
-
-    const char *app_id      = env->GetStringUTFChars (appID_, NULL);
-	const char *file_path   = env->GetStringUTFChars (filePath_, NULL);
-    const int  app_id_len   = env->GetStringUTFLength (appID_);
+    const char *app_id = env->GetStringUTFChars(appID_, NULL);
+    const char *file_path = env->GetStringUTFChars(filePath_, NULL);
+    const int app_id_len = env->GetStringUTFLength(appID_);
 #else
-	unsigned char *wb_data = NULL;
-	int app_id_len = (int) strlen (app_id);
+    unsigned char *wb_data = NULL;
+    int app_id_len = (int) strlen (app_id);
 #endif
 
-	unsigned char seed[BIP39_KEY_STRENGTH/4] = {0};
-	const char *mnemonic = NULL;
+    unsigned char seed[BIP39_KEY_STRENGTH / 4] = {0};
+    const char *mnemonic = NULL;
 
-	int enc_buf_len = 0;
-	unsigned char enc_buffer[AES256_ENCRYPT_LENGTH] = {0};
-	int wb_buf_len = 0;
-	unsigned char wb_buffer[BIP39_KEY_STRENGTH*2] = {0};
+    int enc_buf_len = 0;
+    unsigned char enc_buffer[AES256_ENCRYPT_LENGTH] = {0};
+    int wb_buf_len = 0;
+    unsigned char wb_buffer[BIP39_KEY_STRENGTH * 2] = {0};
 
 #ifdef DEBUG_TRUST_SIGNER
-	int dec_buf_len = 0;
-	unsigned char dec_buffer[AES256_ENCRYPT_LENGTH] = {0};
+    int dec_buf_len = 0;
+    unsigned char dec_buffer[AES256_ENCRYPT_LENGTH] = {0};
 #endif
 
 #if defined(__FILES__)
-	char file_name[256] = {0};
-	sprintf (file_name, "%s/%s", file_path, PREFERENCE_WB);
+    char file_name[256] = {0};
+    sprintf(file_name, "%s/%s", file_path, PREFERENCE_WB);
 #else
-	int table_buf_len = 0;
+    int table_buf_len = 0;
+    char *table_buffer = NULL;
+#endif
+
+#ifdef DEBUG_TRUST_SIGNER
+    LOGD("\n[[[[[ %s ]]]]]\n", __FUNCTION__);
+    LOGD("- appId = %s\n", app_id);
+#if defined(__FILES__)
+    LOGD("- filePath = %s\n", file_path);
+#endif
+#endif
+
+    if (app_id == NULL) {
+        LOGE("Error! Argument data is null!\n");
+        return;
+    }
+
+    // SEED Create /////////////////////////////////////////////////////////////////////////////////
+    mnemonic = generateMnemonic(BIP39_KEY_STRENGTH);
+#ifdef DEBUG_TRUST_SIGNER
+    LOGD("----------------------------- MNEMONIC -------------------------------\n");
+    LOGD("(%03d) : %s\n", (int) strlen(mnemonic), mnemonic);
+#endif
+
+#ifdef DEBUG_TRUST_SIGNER
+    unsigned char entropy[BIP39_KEY_STRENGTH / 8] = {0};
+    mnemonic_to_entropy(mnemonic, entropy);
+    LOGD("----------------------------- ENTROPY --------------------------------\n");
+    hex_print(hexbuf, entropy, sizeof(entropy));
+    LOGD("(%03ld) : %s\n", sizeof(entropy), hexbuf);
+    memzero(entropy, sizeof(entropy));
+#endif
+
+    return;
+}
+
+#if defined(__ANDROID__)
+extern "C"
+JNIEXPORT jbyteArray JNICALL
+Java_io_talken_trustsigner_TrustSigner_getWBInitializeData(JNIEnv *env, jobject instance,
+                                                           jstring appID_, jstring filePath_)
+#else
+#if defined(__FILES__)
+unsigned char *TrustSigner_getWBInitializeData(char *app_id, char *file_path)
+#else
+unsigned char *TrustSigner_getWBInitializeData(char *app_id)
+#endif
+#endif
+{
+#if defined(__ANDROID__)
+    jbyteArray wb_data = NULL;
+
+    const char *app_id      = env->GetStringUTFChars (appID_, NULL);
+    const char *file_path   = env->GetStringUTFChars (filePath_, NULL);
+    const int  app_id_len   = env->GetStringUTFLength (appID_);
+#else
+    unsigned char *wb_data = NULL;
+	int app_id_len = (int) strlen (app_id);
+#endif
+
+    unsigned char seed[BIP39_KEY_STRENGTH/4] = {0};
+    const char *mnemonic = NULL;
+
+    int enc_buf_len = 0;
+    unsigned char enc_buffer[AES256_ENCRYPT_LENGTH] = {0};
+    int wb_buf_len = 0;
+    unsigned char wb_buffer[BIP39_KEY_STRENGTH*2] = {0};
+
+#ifdef DEBUG_TRUST_SIGNER
+    int dec_buf_len = 0;
+    unsigned char dec_buffer[AES256_ENCRYPT_LENGTH] = {0};
+#endif
+
+#if defined(__FILES__)
+    char file_name[256] = {0};
+    sprintf (file_name, "%s/%s", file_path, PREFERENCE_WB);
+#else
+    int table_buf_len = 0;
 	char *table_buffer = NULL;
 #endif
 
 #ifdef DEBUG_TRUST_SIGNER
-	LOGD("\n[[[[[ %s ]]]]]\n", __FUNCTION__);
-	LOGD("- appId = %s\n", app_id);
+    LOGD("\n[[[[[ %s ]]]]]\n", __FUNCTION__);
+    LOGD("- appId = %s\n", app_id);
 #if defined(__FILES__)
-	LOGD("- filePath = %s\n", file_path);
+    LOGD("- filePath = %s\n", file_path);
 #endif
 #endif
 
@@ -440,15 +515,15 @@ unsigned char *TrustSigner_getWBInitializeData(char *app_id)
     }
 
 #if defined(__WHITEBOX__)
-	// WB_TABLE Create /////////////////////////////////////////////////////////////////////////////
+    // WB_TABLE Create /////////////////////////////////////////////////////////////////////////////
 #if defined(__FILES__)
-	trust_signer_create_table_fp (file_name);
+    trust_signer_create_table_fp (file_name);
 #ifdef DEBUG_TRUST_SIGNER
-	LOGD("----------------------------- WB_TABLE -------------------------------\n");
+    LOGD("----------------------------- WB_TABLE -------------------------------\n");
     LOGD("WB Table Create = %s\n", file_name);
 #endif
 #else
-	table_buf_len = trust_signer_create_table (&table_buffer);
+    table_buf_len = trust_signer_create_table (&table_buffer);
 	if (table_buf_len <= 0) {
 		LOGE("Error! WB create failed!\n");
 		return NULL;
@@ -460,11 +535,11 @@ unsigned char *TrustSigner_getWBInitializeData(char *app_id)
 #endif
 #endif
 
-	// SEED Create /////////////////////////////////////////////////////////////////////////////////
-	mnemonic = generateMnemonic (BIP39_KEY_STRENGTH);
+    // SEED Create /////////////////////////////////////////////////////////////////////////////////
+    mnemonic = generateMnemonic (BIP39_KEY_STRENGTH);
 #ifdef DEBUG_TRUST_SIGNER
-	LOGD("----------------------------- MNEMONIC -------------------------------\n");
-	LOGD("(%03d) : %s\n", (int) strlen(mnemonic), mnemonic);
+    LOGD("----------------------------- MNEMONIC -------------------------------\n");
+    LOGD("(%03d) : %s\n", (int) strlen(mnemonic), mnemonic);
 #endif
 
 #ifdef DEBUG_TRUST_SIGNER

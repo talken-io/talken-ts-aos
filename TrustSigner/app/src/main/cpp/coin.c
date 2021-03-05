@@ -42,9 +42,19 @@ const CoinInfo coins[COIN_INFOR_COUNT] = {
 	{"Bitcoin Gold", " BTG",      500000, "\x1d" "Bitcoin Gold Signed Message:\n", true, true, true,  true,  true,    38,   23, 0x0488b21e, 0x0488ade4, 79, "btg",  0x8000009c, SECP256K1_NAME, &secp256k1_info, },
 };
 
-#if 0 // DEBUG
+#if 1 // DEBUG
 #include "bip32_bip39.h"
-char hexbuf[256];
+char hexbuf[512];
+#endif
+
+#if defined(__ANDROID__)
+#include <android/log.h>
+#define LOG_TAG		"### coin.c ### "
+#define LOGD(...)	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
+#define LOGE(...)	__android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+#else
+#define LOGD(...)	printf(__VA_ARGS__)
+#define LOGE(...)	printf(__VA_ARGS__)
 #endif
 
 static uint32_t ser_length(uint32_t len, uint8_t *out)
@@ -336,6 +346,11 @@ void filecoin_hash_sign(const HDNode *node, const uint8_t *hash, uint8_t *signat
 
 	signature[64] = v;
 }
+#if 0
+void filecoin_public_address(const HDNode *node, char* out) {
+
+}
+#endif
 
 /*
  * CRC16 implementation compatible with the Stellar version
@@ -473,7 +488,7 @@ unsigned int coin_derive_node(HDNode *node, const uint32_t *address, const size_
 	int i = 0;
 	uint32_t fingerprint = 0;
 
-#if 1
+#if 0
 	char private_key[BIP32_KEY_LENGTH*2] = {0};
 	char public_key[BIP32_KEY_LENGTH*2] = {0};
 
@@ -488,7 +503,7 @@ unsigned int coin_derive_node(HDNode *node, const uint32_t *address, const size_
 			memzero(node, sizeof(node));
 			return 0xFFFFFFFF;
 		}
-#if 1
+#if 0
 		memset (private_key, 0, sizeof(private_key));
 		hdnode_fill_public_key(node);
 		hdnode_serialize_private (node, fingerprint, VERSION_PRIVATE, private_key, 128);
@@ -500,7 +515,7 @@ unsigned int coin_derive_node(HDNode *node, const uint32_t *address, const size_
 		hdnode_fill_public_key((HDNode *)node);
 	}
 
-#if 1
+#if 0
 	hdnode_serialize_public (node, fingerprint, VERSION_PUBLIC, public_key, 128);
 	printf ("FP  : 0x%x\n", fingerprint);
 	printf ("Pub : %s\n", public_key);
